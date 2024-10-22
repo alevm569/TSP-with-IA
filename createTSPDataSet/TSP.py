@@ -2,17 +2,15 @@ import pyomo.environ as pyo
 import re
 import sys, os
 
+current_dir = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(current_dir)
+
 from createTSPDataSet.utils.constants import Heuristics
 from createTSPDataSet.utils.distanceUtil import *
 from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
 from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
 from createTSPDataSet.utils.plotUtil import plot_route
 import datetime as dt
-
-current_dir = os.path.dirname(os.path.realpath(__file__))
-sys.path.append(current_dir)
-
-
 
 
 class TSP:
