@@ -1,10 +1,11 @@
 
 from matplotlib import pyplot as plt
 
+from createTSPDataSet.utils.constants import Edges, Cities, Distances
 from createTSPDataSet.utils.distanceUtil import calculate_path_distance
 
 
-def plot_route(cities, distances, route, show_name=True, title=None):
+def plot_route(cities: Cities, distances: Distances, route, show_name=True, title=None, marked_edges: Edges=None):
     if None in route:
         print("The route is not complete, and has None values")
         return
@@ -18,6 +19,11 @@ def plot_route(cities, distances, route, show_name=True, title=None):
 
     # Plot of the best route
     plt.plot(coordinate_x, coordinate_y, linestyle='-', marker='o', color='red', label='Best Route')
+    if marked_edges is not None:
+        for edge_from in marked_edges:
+            edge_to = marked_edges[edge_from]
+            plt.plot([cities[edge_from][0], cities[edge_to][0]], [cities[edge_from][1], cities[edge_to][1]],
+                     linestyle='-', color='green', label=None, linewidth=5)
 
     if show_name:
         # Label the cities if show_name is True

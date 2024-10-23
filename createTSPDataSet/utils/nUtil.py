@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 import numpy as np
 
 from createTSPDataSet.utils.distanceUtil import calculate_path_distance
@@ -14,7 +14,6 @@ def find_nearest_neighbor_path_solution(ciudad, distances, seed: int = 123) -> L
     cities = list(ciudad.keys())
     # chose the first city randomly
     first_city = np.random.choice(cities)
-    first_city = cities[0]
     cities.remove(first_city)
     path = [first_city]
     current_city = first_city
@@ -28,11 +27,11 @@ def find_nearest_neighbor_path_solution(ciudad, distances, seed: int = 123) -> L
     return path
 
 
-# find a best route by using 2-opt algorithm after the nearest neighbor heuristic
+# find a best route by using 2-opt algorithm for a given path
 # city: dict[str, tuple[float, float]], ex: {'A': (0.0, 0.0), 'B': (1.0, 1.0), 'C': (2.0, 2.0)}
 # distances: dict[tuple[str, str], float], ex: {('A', 'B'): 1.4142135623730951, ('A', 'C'): 2.8284271247461903, ('B', 'C'): 1.4142135623730951}
 
-def find_best_route_2opt(distances, path: List[str], seed: int = 123) -> List[str]:
+def find_best_route_2opt(distances, path: List[str], seed: int = 123) -> Tuple[List[str], float]:
     np.random.seed(seed)
     best_path = path
     best_distance = calculate_path_distance(distances, path)
@@ -51,4 +50,4 @@ def find_best_route_2opt(distances, path: List[str], seed: int = 123) -> List[st
                     best_distance = new_distance
                     improved = True
                     path = best_path
-    return best_path
+    return best_path, best_distance
