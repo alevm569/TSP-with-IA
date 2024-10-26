@@ -123,6 +123,18 @@ class TSP:
 
         return self.get_results()
 
+    def optimize_with_2_opt(self, route):
+        is_right_route = check_route(route, list(self.cities.keys()))
+        if not is_right_route:
+            print("The found route is incorrect", route)
+            return None
+        best_route, distance = find_best_route_2opt(self.distances, route)
+        is_right_route = check_route(best_route, list(self.cities.keys()))
+        if not is_right_route:
+            print("The found route is incorrect", best_route)
+            return None
+        return best_route
+
     def get_results(self):
         edges = dict()
         valid_paths = []
@@ -138,10 +150,8 @@ class TSP:
 
         initial_city = list(self.cities.keys())[0]
         path = get_path(edges, initial_city, [])
-        best_route, distance = find_best_route_2opt(self.distances, path)
-        self.solution_distance = distance
-        print("Total Distance:", distance)
-        return best_route
+        path.append(path[0])
+        return self.optimize_with_2_opt(path)
 
     def plot_results(self, route: List[str], show_name: bool = True, title=None):
         plot_route(self.cities, self.distances, route, show_name=show_name, title=title, marked_edges=self.best_edges)

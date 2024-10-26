@@ -1,6 +1,9 @@
 from typing import List
 import datetime as dt
 
+from createTSPDataSet.utils.constants import Cities
+
+
 def get_path(edges: dict, initial_city: str, path: List[str]):
     next_node = edges.get(initial_city, "")
     if next_node is None:
@@ -78,3 +81,18 @@ def get_max_distances(distances: dict):
     for city in cities:
         max_distances[city] = get_max_distance_for_city(city, distances)
     return max_distances
+
+def check_route( route:  list[str], cities: list[str]):
+    if len(route) <= 3:
+        return False
+    if route[0] != route[-1]:
+        return False
+    # remove las node in route:
+    route = route[:-1]
+    to_check = set(cities)
+    for node in route:
+        if node not in list(to_check):
+            return False
+        to_check.remove(node)
+    return True
+

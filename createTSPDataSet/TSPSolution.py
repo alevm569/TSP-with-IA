@@ -34,3 +34,10 @@ class TSPSolution:
 
         with open(file_path, 'wb') as f:
             pickle.dump(self, f)
+
+# create a reader for TSP Solution, use the above class to read the solution
+def read_solution_from_pickle(file_path: str) -> TSPSolution:
+    import pickle
+    with open(file_path, 'rb') as f:
+        tsp_solution = pickle.load(f)
+    return tsp_solution

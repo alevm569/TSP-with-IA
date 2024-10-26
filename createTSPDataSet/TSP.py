@@ -6,13 +6,14 @@ from typing import List, Dict
 from createTSPDataSet import current_dir
 from createTSPDataSet.TSPSolution import TSPSolution
 from createTSPDataSet.TSP_LP.TSP_LP import TSP
-from createTSPDataSet.utils.constants import Heuristics, Edges
+from createTSPDataSet.utils.constants import Heuristics, Edges, Cities, Distances
+from createTSPDataSet.utils.distanceUtil import check_route
 from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
 from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
 from createTSPDataSet.utils.plotUtil import plot_route
 
 data_path = os.path.join(current_dir, "data")
-def get_best_path_nearest_neighbor_and_2opt(cities, distances, seed=123):
+def get_best_path_nearest_neighbor_and_2opt(cities: Cities, distances: Distances, seed=123):
     ruta = find_nearest_neighbor_path_solution(cities, distances, seed)
     ruta, distance = find_best_route_2opt(distances, ruta, seed)
     return ruta, distance
@@ -82,7 +83,7 @@ def get_edges_from_solution(solutions: List[TSPSolution]) -> (TSPSolution, TSPSo
     return min_solution, max_solution, edge_result
 
 
-def generate_solution_with_lp(cities, distances, heuristics: List[Heuristics],
+def generate_solution_with_lp(cities: Cities, distances, heuristics: List[Heuristics],
                               min_solution: TSPSolution, max_solution: TSPSolution, best_edges: Edges,
                               show_name: bool = False):
     tsp = TSP(cities, distances, heuristics, best_edges)
@@ -90,6 +91,7 @@ def generate_solution_with_lp(cities, distances, heuristics: List[Heuristics],
     tsp.max_possible_distance = max_solution.distance
     tsp.create_model()
     route = tsp.solve_model(mip_gap=0.01, time_limit_seconds=60, tee=True)
+    check_route(route, list(cities.keys()))
     tsp.plot_results(route, show_name, "TSP with LP")
     return TSPSolution(cities, distances, route, tsp.solution_distance)
 
@@ -97,4 +99,4 @@ def generate_solution_with_lp(cities, distances, heuristics: List[Heuristics],
 if __name__ == "__main__":
     print("Se ha colocado un límite de tiempo de 30 segundos para la ejecución del modelo.")
     # as reference, see nearest neighbor heuristic
-    generate_sample(100, show_name=True, seed=567)
+    generate_sample(20, show_name=True, seed=567)

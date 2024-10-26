@@ -5,7 +5,7 @@ from typing import List
 from createTSPDataSet.utils.constants import Distances, Cities
 
 
-def generate_cities(n_cities: int):
+def generate_cities(n_cities: int) -> Cities:
     cities = {}
     for i in range(n_cities):
         ciudad = get_different_city_name(list(cities.keys()))
