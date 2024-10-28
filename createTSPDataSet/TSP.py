@@ -7,7 +7,6 @@ from createTSPDataSet import current_dir
 from createTSPDataSet.TSPSolution import TSPSolution
 from createTSPDataSet.TSP_LP.TSP_LP import TSP
 from createTSPDataSet.utils.constants import Heuristics, Edges, Cities, Distances
-from createTSPDataSet.utils.distanceUtil import check_route
 from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
 from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
 from createTSPDataSet.utils.plotUtil import plot_route
@@ -19,16 +18,20 @@ def get_best_path_nearest_neighbor_and_2opt(cities: Cities, distances: Distances
     return ruta, distance
 
 
-def generate_sample(n_cities: int, seed=123, show_name=False):
+def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
     cities, distances = generate_cities_with_distances(n_cities, seed)
     solutions = generate_solution_with_heuristics(cities, distances, seed=seed, n_solutions=17)
     min_solution, max_solution, best_edges = get_edges_from_solution(solutions)
-    plot_route(cities, distances, max_solution.route, title="Nearest Neighbor + 2-opt Max", show_name=show_name, marked_edges=best_edges)
-    plot_route(cities, distances, min_solution.route, title="Nearest Neighbor + 2-opt Min", show_name=show_name, marked_edges=best_edges)
+    if show_plot:
+        plot_route(cities, distances, max_solution.route, title="Nearest Neighbor + 2-opt Max", show_name=show_name, marked_edges=best_edges)
+        plot_route(cities, distances, min_solution.route, title="Nearest Neighbor + 2-opt Min", show_name=show_name, marked_edges=best_edges)
 
     heuristics = [Heuristics.BestEdges, Heuristics.NearestNeighbour]
-    lp_solution = generate_solution_with_lp(cities, distances, heuristics, min_solution, max_solution, best_edges, show_name)
-    lp_solution.save_as_pickle(data_path)
+    lp_solution = get_solution_with_lp(cities, distances, heuristics, min_solution, max_solution, best_edges, show_name, show_plot)
+    if lp_solution is not None and lp_solution.distance < min_solution.distance:
+        lp_solution.save_as_pickle(data_path)
+    print(f"Min solution: {min_solution.distance} was choose as the best solution.")
+    min_solution.save_as_pickle(data_path)
 
 
 def generate_solution_with_heuristics(cities, distances, seed: int = 123, n_solutions: int = 5):
@@ -82,21 +85,33 @@ def get_edges_from_solution(solutions: List[TSPSolution]) -> (TSPSolution, TSPSo
             edge_result[i] = j
     return min_solution, max_solution, edge_result
 
+def get_solution_with_lp(cities: Cities, distances, heuristics: List[Heuristics],
+                              min_solution: TSPSolution, max_solution: TSPSolution, best_edges: Edges,
+                              show_name: bool = False, show_plot: bool = False):
+    try:
+        resp = generate_solution_with_lp(cities, distances, heuristics, min_solution, max_solution, best_edges, show_name, show_plot)
+        if not isinstance(resp, TSPSolution):
+            return None
+        return resp
+    except Exception as e:
+        print(f"There was an error while generating a solution with LP: {e}")
+        return None
 
 def generate_solution_with_lp(cities: Cities, distances, heuristics: List[Heuristics],
                               min_solution: TSPSolution, max_solution: TSPSolution, best_edges: Edges,
-                              show_name: bool = False):
-    tsp = TSP(cities, distances, heuristics, best_edges)
+                              show_name: bool = False, show_plot: bool = False):
+    tsp = TSP(cities, distances, heuristics)
     tsp.min_possible_distance = min_solution.distance
     tsp.max_possible_distance = max_solution.distance
+    tsp.best_edges = best_edges
     tsp.create_model()
     route = tsp.solve_model(mip_gap=0.01, time_limit_seconds=60, tee=True)
-    check_route(route, list(cities.keys()))
-    tsp.plot_results(route, show_name, "TSP with LP")
+    if show_plot:
+        tsp.plot_results(route, show_name, "TSP with LP")
     return TSPSolution(cities, distances, route, tsp.solution_distance)
 
 
 if __name__ == "__main__":
     print("Se ha colocado un límite de tiempo de 30 segundos para la ejecución del modelo.")
     # as reference, see nearest neighbor heuristic
-    generate_sample(20, show_name=True, seed=567)
+    generate_sample(100, show_name=True, seed=567, show_plot=True)

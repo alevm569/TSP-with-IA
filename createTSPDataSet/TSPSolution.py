@@ -1,3 +1,4 @@
+import hashlib
 from typing import List
 from createTSPDataSet.utils.constants import Cities, Distances, EdgeList
 
@@ -6,16 +7,19 @@ class TSPSolution:
     def __init__(self,cities: Cities, distances,  route: List[str], distance: float):
         self.cities: Cities = cities
         self.distances: Distances = distances
+        self.hash_id = self.get_hash_id()
         self.route = route
         self.distance = distance
         self.directed_edges : EdgeList = []
         self.edges : EdgeList = []
         self.create_edges_path()
-        self.hash_id = self.get_hash_id()
 
 
     def get_hash_id(self):
-        return hash(str(self.cities))
+        cities_keys = list(self.cities.keys())
+        cities_keys.sort()
+        str_cities= "-".join([f"{k}_{self.cities[k]}" for k in cities_keys])
+        return hashlib.md5(str_cities.encode("utf-8")).hexdigest()
 
     def create_edges_path(self):
         self.edges = []

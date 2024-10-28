@@ -1,5 +1,4 @@
 import re
-from typing import Dict
 
 import pyomo.environ as pyo
 
@@ -10,7 +9,7 @@ from createTSPDataSet.utils.plotUtil import plot_route
 
 
 class TSP:
-    def __init__(self, cities, distances, heuristics: List[str], best_edges: Dict = None):
+    def __init__(self, cities, distances, heuristics: List[str]):
         self.average_distance = get_average_distance(distances)
         self.max_possible_distance = None
         self.min_possible_distance = None
@@ -19,7 +18,7 @@ class TSP:
         self.heuristics = heuristics
         self.average_distance_for_city = get_average_distance_for_city(distances)
         self.model = None
-        self.best_edges = best_edges
+        self.best_edges = None
         self.solution_distance = 0
 
     def print_min_max_distances(self):
