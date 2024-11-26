@@ -66,8 +66,10 @@ def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
     print('\nBest ant')
     print("Best graph path:", min_ant.path)
     print("Best path length:", min_path_length)
-    plot_route(cities, distances, min_ant.path, title="Ant Colony", show_name=show_name, marked_edges=None)
+    index_to_key = list(cities.keys())
 
+    mapped_path = [index_to_key[i] for i in min_ant.path]
+    plot_best_path(mapped_path, cities)
 
 def generate_solution_with_heuristics(cities, distances, seed: int = 123, n_solutions: int = 5):
     solutions = []

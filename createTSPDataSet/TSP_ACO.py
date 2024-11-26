@@ -57,3 +57,27 @@ def ant_system(n_cities, n_ants, n_iterations, distances, pheromones, alpha, bet
                 pheromones[ant.path[i], ant.path[i + 1]] += Q / ant.path_length
                 pheromones[ant.path[i + 1], ant.path[i]] += Q / ant.path_length
     return ants
+def plot_best_path(best_path, cities):
+    plt.figure(figsize=(10, 6))
+
+    coordinate_x = [cities[ciudad][0] for ciudad in cities]
+    coordinate_y = [cities[ciudad][1] for ciudad in cities]
+
+    plt.scatter(coordinate_x, coordinate_y, color="blue", label="Cities")
+
+    # Graphic best path
+    for i in range(len(best_path) - 1):
+        x1, y1 = cities[best_path[i]]
+        x2, y2 = cities[best_path[i + 1]]
+        plt.plot([x1, x2], [y1, y2], color="red", linewidth=2, label="Best Path" if i == 0 else "")
+
+    for ciudad in cities:
+        x, y = cities[ciudad]
+        plt.text(x + 1, y + 1, str(ciudad), fontsize=12, color="black")
+
+    plt.title("Best Path Found by Ant Colony Algorithm")
+    plt.xlabel("X Coordinate")
+    plt.ylabel("Y Coordinate")
+    plt.legend()
+    plt.grid()
+    plt.show()
