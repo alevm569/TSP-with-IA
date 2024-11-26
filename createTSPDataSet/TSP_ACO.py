@@ -1,65 +1,59 @@
-import random
 import numpy as np
-from typing import Dict, List, Tuple
+from matplotlib import pyplot as plt
+
 
 class Ant:
-    def __init__(self, cities, distances, alpha=1.0, beta=2.0):
-        self.cities = cities
-        self.distances = distances
-        self.alpha = alpha  # Influencia de feromonas
-        self.beta = beta    # Influencia heurística
-        self.route = []
-        self.total_distance = 0
+    def __init__(self, start_city):
+        self.start_city = start_city
+        self.current_city = start_city
+        self.visited_cities = [start_city]
+        self.path_length = 0
+        self.path = [start_city]
 
-    def choose_next_city(self, current_city, visited, pheromone):
-        probabilities = []
-        for city in self.cities:
-            if city not in visited:
-                tau = pheromone[(current_city, city)] ** self.alpha
-                eta = (1 / self.distances[current_city, city]) ** self.beta
-                probabilities.append(tau * eta)
-            else:
-                probabilities.append(0)
+    def choose_next_city(self, n_cities, distances, pheromones, alpha, beta):
+        unvisited_cities = [city for city in range(n_cities) if city not in self.visited_cities]
+        probs = np.zeros(len(unvisited_cities))
+        for i, city in enumerate(unvisited_cities):
+            probs[i] = pheromones[city, self.current_city] ** alpha * \
+                       (1 / distances[city, self.current_city]) ** beta
+        probs /= np.sum(probs)
+        # Choose the next city
+        next_city = np.random.choice(unvisited_cities, p=probs)
 
-        probabilities = np.array(probabilities) / sum(probabilities)
-        return np.random.choice(self.cities, p=probabilities)
+        self.path_length += distances[self.current_city, next_city]
+        self.current_city = next_city
+        self.visited_cities.append(next_city)
+        self.path.append(next_city)
+def ant_system(n_cities, n_ants, n_iterations, distances, pheromones, alpha, beta, Q, rho):
+    # Create ants
+    ants = [Ant(i) for i in range(n_ants)]
+    # Main loop
+    for i in range(n_iterations):
+        # Reset visited cities for each ant at the beginning of each iteration
+        for ant in ants:
+            ant.visited_cities = [ant.start_city]
+            ant.current_city = ant.start_city
+            ant.path_length = 0
+            ant.path = [ant.start_city]
 
-    def build_route(self, pheromone):
-        visited = set()
-        current_city = random.choice(list(self.cities.keys()))
-        self.route = [current_city]
-        visited.add(current_city)
-
-        while len(visited) < len(self.cities):
-            next_city = self.choose_next_city(current_city, visited, pheromone)
-            self.route.append(next_city)
-            self.total_distance += self.distances[current_city, next_city]
-            visited.add(next_city)
-            current_city = next_city
-
-class ACO:
-    def __init__(self, cities, distances, n_ants=10, n_iterations=100, evaporation=0.5):
-        self.cities = cities
-        self.distances = distances
-        self.n_ants = n_ants
-        self.n_iterations = n_iterations
-        self.evaporation = evaporation
-        self.pheromone = {(i, j): 1 for i in cities for j in cities if i != j}
-
-    def run(self):
-        best_ant = None
-        for _ in range(self.n_iterations):
-            ants = [Ant(self.cities, self.distances) for _ in range(self.n_ants)]
+        # Ants build their paths
+        for _ in range(n_cities-1):
             for ant in ants:
-                ant.build_route(self.pheromone)
-            self.update_pheromone(ants)
-            best_ant = min(ants, key=lambda x: x.total_distance)
-        return best_ant.route, best_ant.total_distance
+                ant.choose_next_city(n_cities, distances, pheromones, alpha, beta)
 
-    def update_pheromone(self, ants: List[Ant]):
-        for (i, j) in self.pheromone:
-            self.pheromone[(i, j)] *= (1 - self.evaporation)  # Evaporación de feromonas
+        # Add the starting city to the end of the path for each ant
+        for ant in ants:
+            ant.path_length += distances[ant.current_city, ant.start_city]
+            ant.path.append(ant.start_city)
+
+        # Update pheromones
+        for i in range(n_cities):
+            for j in range(i + 1, n_cities):
+                pheromones[i, j] *= (1 - rho)
+                pheromones[j, i] *= (1 - rho)
 
         for ant in ants:
-            for i in range(len(ant.route) - 1):
-                self.pheromone[(ant.route[i], ant.route[i + 1])] += 1 / ant.total_distance
+            for i in range(len(ant.path) - 1):
+                pheromones[ant.path[i], ant.path[i + 1]] += Q / ant.path_length
+                pheromones[ant.path[i + 1], ant.path[i]] += Q / ant.path_length
+    return ants

@@ -33,6 +33,41 @@ def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
     print(f"Min solution: {min_solution.distance} was choose as the best solution.")
     min_solution.save_as_pickle(data_path)
 
+    # Parameters ACO
+    n_ants = n_cities
+    n_iterations = 80
+    alpha = 1
+    beta = 4
+    Q = 1
+
+    # Distance matrix
+    distances = np.zeros((n_cities, n_cities))
+    for i in range(n_cities):
+        for j in range(i + 1, n_cities):
+            dist = np.random.uniform(0, 1)
+            distances[i, j] = dist
+            distances[j, i] = dist
+
+    # Pheromone matrix
+    pheromones = np.ones((n_cities, n_cities)) * 0.2
+
+    # Run the algorithm
+    ants = ant_system(n_cities, n_ants, n_iterations, distances, pheromones, alpha, beta, Q, rho=0.01)
+
+    min_path_length = np.min([ant.path_length for ant in ants])
+    min_ant = [ant for ant in ants if ant.path_length == min_path_length][0]
+
+    # Printing all results
+    print('All best ants')
+    for ant in ants:
+        print("Graph path:", ant.path)
+        print("Path length:", ant.path_length)
+
+    print('\nBest ant')
+    print("Best graph path:", min_ant.path)
+    print("Best path length:", min_path_length)
+    plot_route(cities, distances, min_ant.path, title="Ant Colony", show_name=show_name, marked_edges=None)
+
 
 def generate_solution_with_heuristics(cities, distances, seed: int = 123, n_solutions: int = 5):
     solutions = []
@@ -112,6 +147,8 @@ def generate_solution_with_lp(cities: Cities, distances, heuristics: List[Heuris
 
 
 if __name__ == "__main__":
+    n_cities = 100
     print("Se ha colocado un límite de tiempo de 30 segundos para la ejecución del modelo.")
     # as reference, see nearest neighbor heuristic
-    generate_sample(100, show_name=True, seed=567, show_plot=True)
+    generate_sample(n_cities, show_name=True, seed=567, show_plot=True)
+
