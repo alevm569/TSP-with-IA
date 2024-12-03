@@ -9,8 +9,8 @@ def generate_cities(n_cities: int) -> Cities:
     cities = {}
     for i in range(n_cities):
         ciudad = get_different_city_name(list(cities.keys()))
-        x = round(random.uniform(-100, 100) ,1) # Coordinate x random between -100 and 100
-        y = round(random.uniform(-100, 100), 1)  # Coordinate y random between -100 and 100
+        x = round(random.uniform(0, 1), 2) # Coordinate x random between -100 and 100
+        y = round(random.uniform(0, 1), 2)  # Coordinate y random between -100 and 100
         cities[ciudad] = (x, y)
     return cities
 

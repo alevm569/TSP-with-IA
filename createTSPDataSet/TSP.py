@@ -1,8 +1,11 @@
 import concurrent
-import os
+import os, sys
+script_path = os.path.dirname(os.path.abspath(__file__))
+project_path = os.path.dirname(script_path)
+sys.path.append(project_path)
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict
-
+import numpy as np
 from createTSPDataSet import current_dir
 from createTSPDataSet.TSPSolution import TSPSolution
 from createTSPDataSet.TSP_LP.TSP_LP import TSP
@@ -10,6 +13,7 @@ from createTSPDataSet.utils.constants import Heuristics, Edges, Cities, Distance
 from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
 from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
 from createTSPDataSet.utils.plotUtil import plot_route
+from createTSPDataSet.TSP_ACO import ant_system, plot_best_path
 
 data_path = os.path.join(current_dir, "data")
 def get_best_path_nearest_neighbor_and_2opt(cities: Cities, distances: Distances, seed=123):
@@ -40,7 +44,10 @@ def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
     beta = 4
     Q = 1
 
-    # Distance matrix
+    # Distance matrix using distances variable as numpy matrix
+    # matrix_distances  = np.array([[distances[i][j] for j in cities for i in cities])
+
+
     distances = np.zeros((n_cities, n_cities))
     for i in range(n_cities):
         for j in range(i + 1, n_cities):

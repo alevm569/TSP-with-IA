@@ -7,6 +7,7 @@ class TSPSolution:
     def __init__(self,cities: Cities, distances,  route: List[str], distance: float):
         self.cities: Cities = cities
         self.distances: Distances = distances
+        self.matrix_distances = []
         self.hash_id = self.get_hash_id()
         self.route = route
         self.distance = distance
