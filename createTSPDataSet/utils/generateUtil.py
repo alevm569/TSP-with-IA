@@ -8,7 +8,7 @@ from createTSPDataSet.utils.constants import Distances, Cities
 def generate_cities(n_cities: int) -> Cities:
     cities = {}
     for i in range(n_cities):
-        ciudad = get_different_city_name(list(cities.keys()))
+        ciudad = f'{i}'
         x = round(random.uniform(0, 1), 2) # Coordinate x random between -100 and 100
         y = round(random.uniform(0, 1), 2)  # Coordinate y random between -100 and 100
         cities[ciudad] = (x, y)

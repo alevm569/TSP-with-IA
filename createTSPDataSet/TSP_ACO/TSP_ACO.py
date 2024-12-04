@@ -24,6 +24,7 @@ class Ant:
         self.current_city = next_city
         self.visited_cities.append(next_city)
         self.path.append(next_city)
+
 def ant_system(n_cities, n_ants, n_iterations, distances, pheromones, alpha, beta, Q, rho):
     # Create ants
     ants = [Ant(i) for i in range(n_ants)]
@@ -57,6 +58,7 @@ def ant_system(n_cities, n_ants, n_iterations, distances, pheromones, alpha, bet
                 pheromones[ant.path[i], ant.path[i + 1]] += Q / ant.path_length
                 pheromones[ant.path[i + 1], ant.path[i]] += Q / ant.path_length
     return ants
+
 def plot_best_path(best_path, cities):
     plt.figure(figsize=(10, 6))
 

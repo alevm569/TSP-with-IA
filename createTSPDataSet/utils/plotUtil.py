@@ -35,7 +35,7 @@ def plot_route(cities: Cities, distances: Distances, route, show_name=True, titl
     plt.xlabel('Coordinate X')
     plt.ylabel('Coordinate Y')
     title = title if title is not None else 'Cities'
-    title = title + ' (Distance: {:.2f})'.format(path_distance)
+    title = title + ' (Distance: {:.4f})'.format(path_distance)
     plt.title(title)
     plt.legend()
     plt.grid(True)

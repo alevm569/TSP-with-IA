@@ -2,6 +2,7 @@ import re
 
 import pyomo.environ as pyo
 
+from createTSPDataSet import tsp_logger
 from createTSPDataSet.utils.constants import Heuristics
 from createTSPDataSet.utils.distanceUtil import *
 from createTSPDataSet.utils.nUtil import find_best_route_2opt
@@ -22,9 +23,9 @@ class TSP:
         self.solution_distance = 0
 
     def print_min_max_distances(self):
-        print(f"Minimum detected possible total distance: {self.min_possible_distance}")
-        print(f"Maximum detected possible total distance: {self.max_possible_distance}")
-        print(f"Applied heuristics: {self.heuristics}")
+        tsp_logger.debug(f"Minimum detected possible total distance: {self.min_possible_distance}")
+        tsp_logger.debug(f"Maximum detected possible total distance: {self.max_possible_distance}")
+        tsp_logger.debug(f"Applied heuristics: {self.heuristics}")
 
     def create_model(self):
         self.model = pyo.ConcreteModel()
@@ -80,8 +81,8 @@ class TSP:
             def rule_nearest_neighbour(model, i, j):
                 if i == j:
                     return pyo.Constraint.Skip
-                if self.average_distance_for_city[i] > self.average_distance:
-                     return pyo.Constraint.Skip
+                if self.average_distance_for_city[i] > self.average_distance or self.distances[i,j] <=0:
+                    return pyo.Constraint.Skip
                 return model.x[i,j] * self.distances[i,j] <= self.average_distance_for_city[i]
             self.model.nearest_neighbor = pyo.Constraint(self.model.N, self.model.M, rule=rule_nearest_neighbour)
 
@@ -101,7 +102,7 @@ class TSP:
 
     def solve_model(self, mip_gap, time_limit_seconds, tee):
         if self.model is None:
-            return print("Model not created yet")
+            return tsp_logger.warn("Model not created yet")
 
         # Solving the model
         start_time = dt.datetime.now()
@@ -111,27 +112,28 @@ class TSP:
         results = solver.solve(self.model, tee=tee)
 
         execution_time = dt.datetime.now() - start_time
-        print(f"Execution time: {delta_time_mm_ss(execution_time)}")
+        tsp_logger.debug(f"Execution time: {delta_time_mm_ss(execution_time)}, results: {results.solver.termination_condition}")
         self.print_min_max_distances()
 
         # Showing the results
         if results.solver.termination_condition == pyo.TerminationCondition.optimal:
-            print("Optimal solution found")
+            tsp_logger.debug("Optimal solution found")
         else:
-            print("No optimal solution found, but the solver has terminated")
+            tsp_logger.debug("No optimal solution found, but the solver has terminated")
 
         return self.get_results()
 
     def optimize_with_2_opt(self, route):
         is_right_route = check_route(route, list(self.cities.keys()))
         if not is_right_route:
-            print("The found route is incorrect", route)
+            tsp_logger.error("The solution route is incorrect", route)
             return None
         best_route, distance = find_best_route_2opt(self.distances, route)
         is_right_route = check_route(best_route, list(self.cities.keys()))
         if not is_right_route:
-            print("The found route is incorrect", best_route)
+            tsp_logger.error("The found route is incorrect", best_route)
             return None
+        self.solution_distance = distance
         return best_route
 
     def get_results(self):
@@ -139,7 +141,7 @@ class TSP:
         valid_paths = []
         for v in self.model.component_data_objects(pyo.Var):
             if v.domain == pyo.Boolean and v.value is not None and v.value > 0:
-                edge = re.search(r'\[(\w\d)*,(\w\d)*]', v.name)
+                edge = re.search(r"\['(\d+)','(\d+)'\]", v.name)
                 city1, city2 = edge.group(1), edge.group(2)
                 key = f"{city1}_{city2}"
                 # Esto evita caer en ciclos cerrados

@@ -1,7 +1,7 @@
 from typing import List, Tuple
 import numpy as np
 
-from createTSPDataSet.utils.distanceUtil import calculate_path_distance
+from createTSPDataSet.utils.distanceUtil import calculate_path_distance, check_route
 
 
 # find the best path using the nearest neighbor heuristic
@@ -51,3 +51,16 @@ def find_best_route_2opt(distances, path: List[str], seed: int = 123) -> Tuple[L
                     improved = True
                     path = best_path
     return best_path, best_distance
+
+
+def optimize_with_2_opt_util(route, cities, distances):
+    is_right_route = check_route(route, list(cities.keys()))
+    if not is_right_route:
+        print("The found route is incorrect", route)
+        return None
+    best_route, distance = find_best_route_2opt(distances, route)
+    is_right_route = check_route(best_route, list(cities.keys()))
+    if not is_right_route:
+        print("The found route is incorrect", best_route)
+        return None
+    return best_route, distance

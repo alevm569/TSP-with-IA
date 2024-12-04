@@ -1,6 +1,8 @@
 from typing import List
 import datetime as dt
 
+import numpy as np
+
 from createTSPDataSet.utils.constants import Cities
 
 
@@ -96,3 +98,13 @@ def check_route( route:  list[str], cities: list[str]):
         to_check.remove(node)
     return True
 
+def get_matrix_distance_from_distance_dict(n_cities: int, cities: Cities, distances: dict):
+    # Distance matrix using distances variable as numpy matrix
+    matrix_distances = np.zeros((n_cities, n_cities))
+    for ix, city in enumerate(cities):
+        for iy, city2 in enumerate(cities):
+            if city == city2:
+                matrix_distances[ix, iy] = 0
+                continue
+            matrix_distances[ix, iy] = distances[(city, city2)]
+    return matrix_distances

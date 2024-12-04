@@ -1,163 +1,88 @@
-import concurrent
-import os, sys
+# ---- mandatory imports ----
+import os
+import sys
 script_path = os.path.dirname(os.path.abspath(__file__))
 project_path = os.path.dirname(script_path)
 sys.path.append(project_path)
-from concurrent.futures import ThreadPoolExecutor
-from typing import List, Dict
-import numpy as np
-from createTSPDataSet import current_dir
-from createTSPDataSet.TSPSolution import TSPSolution
-from createTSPDataSet.TSP_LP.TSP_LP import TSP
-from createTSPDataSet.utils.constants import Heuristics, Edges, Cities, Distances
-from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
-from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
+# ---- mandatory imports ----
+import datetime as dt
+from typing import List
+from createTSPDataSet.TSPSolution import TSPSolution, TSPSource
+from createTSPDataSet.TSP_ACO.TSP_ACO_Generate import generate_aco_solution
 from createTSPDataSet.utils.plotUtil import plot_route
-from createTSPDataSet.TSP_ACO import ant_system, plot_best_path
+from createTSPDataSet import current_dir, tsp_logger
+from createTSPDataSet.utils.constants import Heuristics, Cities, Distances
+from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
+from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
 
 data_path = os.path.join(current_dir, "data")
+
+
 def get_best_path_nearest_neighbor_and_2opt(cities: Cities, distances: Distances, seed=123):
     ruta = find_nearest_neighbor_path_solution(cities, distances, seed)
     ruta, distance = find_best_route_2opt(distances, ruta, seed)
     return ruta, distance
 
 
+def report_time(start_time: dt.datetime, end_time: dt.datetime):
+    d_time = end_time - start_time
+    seconds = d_time.total_seconds()
+    d_formatted = f"{int(seconds // 3600)}h {int((seconds % 3600) // 60)}m {int(seconds % 60)}s"
+    return f"{seconds} seconds -> ({d_formatted})"
+
+
 def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
+    from createTSPDataSet.TSP_LP.TSP_LP_Generate import generate_solution_with_heuristics, get_edges_from_solution, \
+        get_solution_with_lp
+
+    tsp_logger.info(f"--> Generating sample with {n_cities} cities.")
     cities, distances = generate_cities_with_distances(n_cities, seed)
-    solutions = generate_solution_with_heuristics(cities, distances, seed=seed, n_solutions=17)
-    min_solution, max_solution, best_edges = get_edges_from_solution(solutions)
+    # Generate a sample using the nearest neighbor heuristic and 2-opt algorithm
+    ini_time = dt.datetime.now()
+    solutions = generate_solution_with_heuristics(cities, distances, seed=seed, n_solutions=12, verbose=False)
+    min_h_solution, max_h_solution, best_edges = get_edges_from_solution(solutions)
+    min_h_solution.source = TSPSource.NEAREST_NEIGHBOR
     if show_plot:
-        plot_route(cities, distances, max_solution.route, title="Nearest Neighbor + 2-opt Max", show_name=show_name, marked_edges=best_edges)
-        plot_route(cities, distances, min_solution.route, title="Nearest Neighbor + 2-opt Min", show_name=show_name, marked_edges=best_edges)
+        plot_route(cities, distances, max_h_solution.route, title="Nearest Neighbor + 2-opt Max",
+                   show_name=show_name, marked_edges=best_edges)
+        plot_route(cities, distances, min_h_solution.route, title="Nearest Neighbor + 2-opt Min",
+                   show_name=show_name, marked_edges=best_edges)
+    tsp_logger.info(
+        f"-Solved with NN and 2-opt. \t| distance: {round(min_h_solution.distance,6)}  \t| {report_time(ini_time, dt.datetime.now())}")
 
+    # Generate a sample using the linear programming model with the best edges and 2-opt algorithm
+    ini_time = dt.datetime.now()
     heuristics = [Heuristics.BestEdges, Heuristics.NearestNeighbour]
-    lp_solution = get_solution_with_lp(cities, distances, heuristics, min_solution, max_solution, best_edges, show_name, show_plot)
-    if lp_solution is not None and lp_solution.distance < min_solution.distance:
-        lp_solution.save_as_pickle(data_path)
-    print(f"Min solution: {min_solution.distance} was choose as the best solution.")
-    min_solution.save_as_pickle(data_path)
+    lp_solution = get_solution_with_lp(cities, distances, heuristics, min_h_solution, max_h_solution, best_edges,
+                                       show_name, show_plot, verbose=False)
+    if lp_solution is not None:
+        lp_solution.source = TSPSource.LP
+        tsp_logger.info(
+            f"-Solved with LP and 2-opt. \t| distance: {round(lp_solution.distance, 6)} \t| {report_time(ini_time, dt.datetime.now())}")
 
-    # Parameters ACO
-    n_ants = n_cities
-    n_iterations = 80
-    alpha = 1
-    beta = 4
-    Q = 1
+    # Generate a sample using the ant colony optimization algorithm
+    ini_time = dt.datetime.now()
+    aco_tsp_solution = generate_aco_solution(cities, distances, show_name, show_plot, verbose=False)
+    if aco_tsp_solution is not None:
+        aco_tsp_solution.source = TSPSource.ACO
+        tsp_logger.info(
+            f"-Solved with ACO and 2-opt. \t| distance: {round(aco_tsp_solution.distance, 6)} \t| {report_time(ini_time, dt.datetime.now())}")
 
-    # Distance matrix using distances variable as numpy matrix
-    # matrix_distances  = np.array([[distances[i][j] for j in cities for i in cities])
-
-
-    distances = np.zeros((n_cities, n_cities))
-    for i in range(n_cities):
-        for j in range(i + 1, n_cities):
-            dist = np.random.uniform(0, 1)
-            distances[i, j] = dist
-            distances[j, i] = dist
-
-    # Pheromone matrix
-    pheromones = np.ones((n_cities, n_cities)) * 0.2
-
-    # Run the algorithm
-    ants = ant_system(n_cities, n_ants, n_iterations, distances, pheromones, alpha, beta, Q, rho=0.01)
-
-    min_path_length = np.min([ant.path_length for ant in ants])
-    min_ant = [ant for ant in ants if ant.path_length == min_path_length][0]
-
-    # Printing all results
-    print('All best ants')
-    for ant in ants:
-        print("Graph path:", ant.path)
-        print("Path length:", ant.path_length)
-
-    print('\nBest ant')
-    print("Best graph path:", min_ant.path)
-    print("Best path length:", min_path_length)
-    index_to_key = list(cities.keys())
-
-    mapped_path = [index_to_key[i] for i in min_ant.path]
-    plot_best_path(mapped_path, cities)
-
-def generate_solution_with_heuristics(cities, distances, seed: int = 123, n_solutions: int = 5):
-    solutions = []
-
-    def solve(seed_offset):
-        new_seed = seed + seed_offset
-        route, distance = get_best_path_nearest_neighbor_and_2opt(cities, distances, new_seed)
-        return TSPSolution(cities, distances, route, distance)
-
-    with ThreadPoolExecutor() as executor:
-        # Execute the solve function with different seeds in parallel
-        futures = [executor.submit(solve, offset * 7) for offset in range(n_solutions)]
-
-        # Take the results as they come in
-        for future in concurrent.futures.as_completed(futures):
-            solutions.append(future.result())
-            print(f"Solution {len(solutions)}: {solutions[-1].distance}")
-
-    return solutions
+    solutions = [min_h_solution, lp_solution, aco_tsp_solution]
+    save_sample(solutions, seed)
 
 
-def count_edges_in_solutions(solutions: List[TSPSolution]) -> (TSPSolution, TSPSolution, Dict[str, str]):
-    min_solution = solutions[0]
-    max_solution = solutions[0]
-    edges = dict()
-    best_edges = dict()
-    for tsp_solution in solutions:
-        if tsp_solution.distance < min_solution.distance:
-            min_solution = tsp_solution
-        if tsp_solution.distance > max_solution.distance:
-            max_solution = tsp_solution
-        for edge in tsp_solution.edges:
-            if edges.get(edge, None) is None:
-                edges[edge] = 1
-            else:
-                edges[edge] += 1
-            if edges[edge] == len(solutions):
-                (i, j) = edge
-                best_edges[i] = j
-                best_edges[j] = i
-    return min_solution, max_solution, best_edges
-
-
-# This is quite similar to ACO, edges that appear in all solutions are the best edges
-def get_edges_from_solution(solutions: List[TSPSolution]) -> (TSPSolution, TSPSolution, Edges):
-    min_solution, max_solution, best_edges = count_edges_in_solutions(solutions)
-    edge_result = dict()
-    for (i, j) in min_solution.directed_edges:
-        if best_edges.get(i, None) == j:
-            edge_result[i] = j
-    return min_solution, max_solution, edge_result
-
-def get_solution_with_lp(cities: Cities, distances, heuristics: List[Heuristics],
-                              min_solution: TSPSolution, max_solution: TSPSolution, best_edges: Edges,
-                              show_name: bool = False, show_plot: bool = False):
-    try:
-        resp = generate_solution_with_lp(cities, distances, heuristics, min_solution, max_solution, best_edges, show_name, show_plot)
-        if not isinstance(resp, TSPSolution):
-            return None
-        return resp
-    except Exception as e:
-        print(f"There was an error while generating a solution with LP: {e}")
-        return None
-
-def generate_solution_with_lp(cities: Cities, distances, heuristics: List[Heuristics],
-                              min_solution: TSPSolution, max_solution: TSPSolution, best_edges: Edges,
-                              show_name: bool = False, show_plot: bool = False):
-    tsp = TSP(cities, distances, heuristics)
-    tsp.min_possible_distance = min_solution.distance
-    tsp.max_possible_distance = max_solution.distance
-    tsp.best_edges = best_edges
-    tsp.create_model()
-    route = tsp.solve_model(mip_gap=0.01, time_limit_seconds=60, tee=True)
-    if show_plot:
-        tsp.plot_results(route, show_name, "TSP with LP")
-    return TSPSolution(cities, distances, route, tsp.solution_distance)
+def save_sample(solution_list: List[TSPSolution], seed: int):
+    best_solution = solution_list[0]
+    for solution in solution_list:
+        if solution is None:
+            continue
+        if solution.distance < best_solution.distance:
+            best_solution = solution
+    tsp_logger.info(f"Best solution for {seed}: {best_solution.source.name} - {round(best_solution.distance, 4)}")
+    best_solution.save_as_pickle(data_path)
 
 
 if __name__ == "__main__":
     n_cities = 100
-    print("Se ha colocado un límite de tiempo de 30 segundos para la ejecución del modelo.")
-    # as reference, see nearest neighbor heuristic
-    generate_sample(n_cities, show_name=True, seed=567, show_plot=True)
-
+    generate_sample(n_cities, show_name=True, seed=567, show_plot=False)
