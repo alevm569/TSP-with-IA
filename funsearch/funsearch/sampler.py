@@ -21,12 +21,13 @@ import numpy as np
 
 from funsearch import evaluator
 from funsearch import programs_database
-
+from ollama import OLLAMA
 
 class LLM:
   """Language model that predicts continuation of provided source code."""
 
-  def __init__(self, samples_per_prompt: int, model: llm.Model, log_path=None) -> None:
+  #def __init__(self, samples_per_prompt: int, model: llm.Model, log_path=None) -> None:
+  def __init__(self, samples_per_prompt: int, model: OLLAMA, log_path=None) -> None:
     self._samples_per_prompt = samples_per_prompt
     self.model = model
     self.prompt_count = 0
@@ -35,6 +36,8 @@ class LLM:
   def _draw_sample(self, prompt: str) -> str:
     """Returns a predicted continuation of `prompt`."""
     response = self.model.prompt(prompt)
+    print("prompt", prompt)
+    print("model response", response)
     self._log(prompt, response, self.prompt_count)
     self.prompt_count += 1
     return response

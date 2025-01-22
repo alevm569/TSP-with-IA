@@ -98,8 +98,9 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
     log_path.mkdir(parents=True)
     logging.info(f"Writing logs to {log_path}")
 
-  model = llm.get_model(model_name)
-  model.key = model.get_key()
+  #model = llm.get_model(model_name)
+  #model.key = model.get_key()
+  model = sampler.OLLAMA(model_name="codegemma:latest", temperature=0.7)
   lm = sampler.LLM(2, model, log_path)
 
   specification = spec_file.read()
@@ -127,6 +128,9 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
   # We send the initial implementation to be analysed by one of the evaluators.
   initial = template.get_function(function_to_evolve).body
   evaluators[0].analyse(initial, island_id=None, version_generated=None)
+  print("--> 1", database._islands[0])
+  print("--> 2", database._islands[0]._clusters)
+  time.sleep(10)
   assert len(database._islands[0]._clusters) > 0, ("Initial analysis failed. Make sure that Sandbox works! "
                                                    "See e.g. the error files under sandbox data.")
 
