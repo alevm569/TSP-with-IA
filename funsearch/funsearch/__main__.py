@@ -10,6 +10,9 @@ import llm
 from dotenv import load_dotenv
 
 import sys, os
+
+from funsearch.config import Config
+
 script_path = os.path.dirname(os.path.abspath(__file__))
 project_path = os.path.dirname(script_path)
 sys.path.append(project_path)
@@ -53,6 +56,18 @@ def parse_input(filename_or_data: str):
     data = [f(v) for v in data]
   return data
 
+
+def validate_and_open_file(spec_file_path):
+  # Check if the path is absolute or relative and open the file if it exists
+  if not os.path.isabs(spec_file_path):
+    spec_file_path = os.path.join(os.getcwd(), spec_file_path)
+
+  if os.path.exists(spec_file_path):
+    return click.open_file(spec_file_path, "r")
+
+  return None
+
+
 @click.group()
 @click.pass_context
 def main(ctx):
@@ -60,7 +75,7 @@ def main(ctx):
 
 
 @main.command()
-@click.argument("spec_file", type=click.File("r"))
+@click.argument("spec_file", type=click.Path(exists=False, dir_okay=False, resolve_path=True))
 @click.argument('inputs')
 @click.option('--model_name', default="gpt-3.5-turbo-instruct", help='LLM model')
 @click.option('--output_path', default="./data/", type=click.Path(file_okay=False), help='path for logs and data')
@@ -91,6 +106,9 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
   # OPENAI_API_KEY=sk-...
   # See 'llm' package on how to use other providers.
   load_dotenv()
+  spec_file = validate_and_open_file(spec_file)
+  if spec_file is None:
+    raise Exception(f"File with specifications {spec_file} does not exist")
 
   timestamp = str(int(time.time()))
   log_path = pathlib.Path(output_path) / timestamp
@@ -100,7 +118,7 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
 
   #model = llm.get_model(model_name)
   #model.key = model.get_key()
-  model = sampler.OLLAMA(model_name="codegemma:latest", temperature=0.7)
+  model = sampler.OLLAMA(model_name=Config.model_name, api_endpoint=Config.api_endpoint,  temperature=0.7)
   lm = sampler.LLM(2, model, log_path)
 
   specification = spec_file.read()
@@ -115,6 +133,7 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
 
   inputs = parse_input(inputs)
 
+  # Inicializacion de evaluadores y samplers (sandboxes).
   sandbox_class = next(c for c in SANDBOX_TYPES if c.__name__ == sandbox_type)
   evaluators = [evaluator.Evaluator(
     database,
@@ -130,13 +149,14 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
   evaluators[0].analyse(initial, island_id=None, version_generated=None)
   print("--> 1", database._islands[0])
   print("--> 2", database._islands[0]._clusters)
-  time.sleep(10)
+  # time.sleep(10) # TODO: vale and guille ver si es necesario este sleep
   assert len(database._islands[0]._clusters) > 0, ("Initial analysis failed. Make sure that Sandbox works! "
                                                    "See e.g. the error files under sandbox data.")
 
   samplers = [sampler.Sampler(database, evaluators, lm)
               for _ in range(samplers)]
 
+  # Ejecucion del algoritmo Evolutivo, tomar en cuenta que se puede usar iterations como criterio de parada.
   core.run(samplers, database, iterations)
 
 

@@ -49,7 +49,7 @@ class DummySandbox:
 
     parsed_code = ast.parse(program)
     compiled_code = compile(parsed_code, filename="<ast>", mode="exec")
-    exec(compiled_code, namespace)
+    exec(compiled_code, namespace) # AQUI ejecuta el script
     return namespace
 
 

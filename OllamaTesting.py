@@ -1,12 +1,10 @@
+# create a script that will call my local OLLAMA API to generate code snippets.
+
 import requests
 import json
 
-model_name_default = "codegemma:latest"
-api_endpoint_default = 'http://172.21.230.21:11434/api/generate'
-
-
 class OLLAMA:
-    def __init__(self, model_name=model_name_default, api_endpoint=api_endpoint_default, **kwargs):
+    def __init__(self, model_name, api_endpoint='http://localhost:11434/api/generate', **kwargs):
         self.model_name = model_name
         self.api_endpoint = api_endpoint
         self.session = requests.Session()
@@ -17,7 +15,7 @@ class OLLAMA:
     def predict(self, question, **kwargs):
         output = ""
         payload = {'model': self.model_name, 'prompt': question, **self.kwargs, **kwargs}
-
+        # TODO: Guille y Vale, sera que usando sessiones nos va mejor?
         # Use the session to post the request with the payload
         with self.session.post(self.api_endpoint, json=payload, stream=True) as r:
             # Ensure the response status is OK
@@ -40,3 +38,6 @@ class OLLAMA:
         return self.predict(question, **kwargs)
     def __call__(self, question, **kwargs):
         return self.predict(question, **kwargs)
+
+# Create an instance of the OLLAMA class
+ollama = OLLAMA("gpt2")

@@ -20,31 +20,39 @@ from funsearch import code_manipulation
 
 
 def _extract_function_names(specification: str) -> tuple[str, str]:
-  """Returns the name of the function to evolve and of the function to run."""
-  run_functions = list(
-      code_manipulation.yield_decorated(specification, 'funsearch', 'run'))
-  if len(run_functions) != 1:
-    raise ValueError('Expected 1 function decorated with `@funsearch.run`.')
-  evolve_functions = list(
-      code_manipulation.yield_decorated(specification, 'funsearch', 'evolve'))
-  if len(evolve_functions) != 1:
-    raise ValueError('Expected 1 function decorated with `@funsearch.evolve`.')
-  return evolve_functions[0], run_functions[0]
+    """Returns the name of the function to evolve and of the function to run."""
+    run_functions = list(
+        code_manipulation.yield_decorated(specification, 'funsearch', 'run'))
+    if len(run_functions) != 1:
+        raise ValueError('Expected 1 function decorated with `@funsearch.run`.')
+    evolve_functions = list(
+        code_manipulation.yield_decorated(specification, 'funsearch', 'evolve'))
+    if len(evolve_functions) != 1:
+        raise ValueError('Expected 1 function decorated with `@funsearch.evolve`.')
+    return evolve_functions[0], run_functions[0]
 
 
 def run(samplers, database, iterations: int = -1):
-  """Launches a FunSearch experiment."""
-
-  try:
-    # This loop can be executed in parallel on remote sampler machines. As each
-    # sampler enters an infinite loop, without parallelization only the first
-    # sampler will do any work.
-    while iterations != 0:
-      for s in samplers:
-        s.sample()
-      if iterations > 0:
-        iterations -= 1
-  except KeyboardInterrupt:
-    logging.info("Keyboard interrupt. Stopping.")
-  database.backup()
-
+    """Launches a FunSearch experiment."""
+    msg = "without limit" if iterations < 0 else f"for {iterations} iterations"
+    logging.info(f"Starting FunSearch {msg}")
+    current_iteration = 0  # Track the number of completed iterations
+    try:
+        # This loop can be executed in parallel on remote sampler machines. As each
+        # sampler enters an infinite loop, without parallelization only the first
+        # sampler will do any work.
+        while iterations != 0:
+            current_iteration += 1
+            logging.info(f"Iteration {current_iteration}")
+            # TODO: Aqui se puede implementar un criterio de parada
+            # esto seria leyendo un archivo
+            for s in samplers:
+                # statics = file()
+                # if statics.patience == 20:
+                #     break
+                s.sample()
+            if iterations > 0:
+                iterations -= 1
+    except KeyboardInterrupt:
+        logging.info("Keyboard interrupt. Stopping.")
+    database.backup()

@@ -1,6 +1,7 @@
 """Finds large cap sets.
 
 On every iteration, improve priority_v1 over the priority_vX methods from previous iterations.
+Wrap your suggested code using this %% like for example: %% print("Hello world") %%, so I can copy easily.
 Make only small changes.
 Try to make the code short.
 """
@@ -14,12 +15,8 @@ import funsearch
 @funsearch.run
 def evaluate(n: int) -> int:
   """Returns the size of an `n`-dimensional cap set."""
-  capset = solve(n)
-  return len(capset)
 
-
-def solve(n: int) -> np.ndarray:
-  """Returns a large cap set in `n` dimensions."""
+  # Returns a large cap set in `n` dimensions
   all_vectors = np.array(list(itertools.product((0, 1, 2), repeat=n)), dtype=np.int32)
 
   # Powers in decreasing order for compatibility with `itertools.product`, so
@@ -41,7 +38,7 @@ def solve(n: int) -> np.ndarray:
     priorities[max_index] = -np.inf
     capset = np.concatenate([capset, vector], axis=0)
 
-  return capset
+  return len(capset)
 
 
 @funsearch.evolve
@@ -50,3 +47,5 @@ def priority(el: tuple[int, ...], n: int) -> float:
   el is a tuple of length n with values 0-2.
   """
   return 0.0
+
+print(evaluate(2))
