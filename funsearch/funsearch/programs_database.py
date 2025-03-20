@@ -307,7 +307,6 @@ class Island:
                    f'`{self._function_to_evolve}_v{next_version - 1}`.'),
     )
     versioned_functions.append(header)
-    # TODO: Guille y Vale, es necesario anadir eval_function a program?
     # Replace functions in the template with the list constructed here.
     prompt_program = dataclasses.replace(self._template, functions=versioned_functions)
     eval_function = self._template.get_function('evaluate')

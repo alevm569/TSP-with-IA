@@ -149,7 +149,6 @@ def run(spec_file, inputs, model_name, output_path, load_backup, iterations, sam
   evaluators[0].analyse(initial, island_id=None, version_generated=None)
   print("--> 1", database._islands[0])
   print("--> 2", database._islands[0]._clusters)
-  # time.sleep(10) # TODO: vale and guille ver si es necesario este sleep
   assert len(database._islands[0]._clusters) > 0, ("Initial analysis failed. Make sure that Sandbox works! "
                                                    "See e.g. the error files under sandbox data.")
 

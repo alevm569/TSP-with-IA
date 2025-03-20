@@ -31,8 +31,8 @@ from funsearch import sandbox
   - ` or ' or # without indentation
 """ #TODO: vale and Guille, check if this regex is correct METHOD_MATCHER = re.compile(r"```python(.*?)def priority_v(.*)*?(.*?)```python")
 # METHOD_MATCHER = re.compile(r"def priority_v\d\(.*?\) -> float:(?:\s*(?:[ \t]*(?!def|#|`|').*(?:\n|$)))+")
-METHOD_MATCHER = re.compile(r"```python(.*?)def priority_v(.*)*?(.*?)```python")
-METHOD_NAME_MATCHER = re.compile(r"priority_v\d+")
+METHOD_MATCHER = re.compile(r'```python\n(.*?)```', re.DOTALL)
+METHOD_NAME_MATCHER = re.compile(r"(priority_v\d+|find_best_route_v\d+|find_best_route)")
 
 
 class _FunctionLineVisitor(ast.NodeVisitor):
@@ -56,16 +56,17 @@ class _FunctionLineVisitor(ast.NodeVisitor):
 
 
 def _find_method_implementation(generated_code: str) -> Tuple[str, str]:
-    """Find the last 'def priority_vX()' method from generated code.
+    """Find the last 'def priority_vX()' method from generated code."""
 
-    Return the code and the name of the method.
-    """
     matches = METHOD_MATCHER.findall(generated_code)
     if not matches:
+        print("No matches found by METHOD_MATCHER.")
         return "", ""
-    last_match = matches[-1]
-    name = METHOD_NAME_MATCHER.search(last_match).group()
-    return last_match, name
+
+    # Extract only the last found feature
+    last_match = matches[-1].strip()
+    function_name = METHOD_NAME_MATCHER.search(last_match).group()
+    return last_match, function_name
 
 
 def _trim_function_body(generated_code: str) -> str:
@@ -77,7 +78,7 @@ def _trim_function_body(generated_code: str) -> str:
 
     method_name = "fake_function_header"
     # Check is the response only a continuation for our prompt or full method implementation with header
-    if "def priority_v" in generated_code:
+    if "def priority_v" in generated_code or "def find_best_route" in generated_code:
         code, method_name = _find_method_implementation(generated_code)
     else:
         code = f'def {method_name}():\n{generated_code}'
@@ -89,17 +90,19 @@ def _trim_function_body(generated_code: str) -> str:
         try:
             tree = ast.parse(code)
         except SyntaxError as e:
+            print(f"SyntaxError at line {e.lineno}: {e.msg}")
             code = '\n'.join(code.splitlines()[:e.lineno - 1])
-    if not code:
-        # Nothing could be saved from `generated_code`
-        return ''
+            if not code:
+                # Nothing could be saved from `generated_code`
+                print("No valid code could be parsed.")
+                return ''
 
     visitor = _FunctionLineVisitor(method_name)
     visitor.visit(tree)
     body_lines = code.splitlines()[1:visitor.function_end_line]
-    return '\n'.join(body_lines) + '\n\n'
+    trimmed_body = '\n'.join(body_lines) + '\n\n'
+    return trimmed_body
 
-# TODO: Check this function, it seems is not parsing as expected (Vale and Guille)
 def _sample_to_program(
         generated_code: str,
         version_generated: int | None,
@@ -107,6 +110,7 @@ def _sample_to_program(
         function_to_evolve: str,
 ) -> tuple[code_manipulation.Function, str]:
     """Returns the compiled generated function and the full runnable program."""
+    generated_code = ''.join(generated_code)
     body = _trim_function_body(generated_code)
     if version_generated is not None:
         body = code_manipulation.rename_function_calls(
