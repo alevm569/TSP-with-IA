@@ -83,6 +83,7 @@ def main(ctx):
 @click.option('--iterations', default=-1, type=click.INT, help='Max iterations per sampler')
 @click.option('--samplers', default=15, type=click.INT, help='Samplers')
 @click.option('--sandbox_type', default="ContainerSandbox", type=click.Choice(SANDBOX_NAMES), help='Sandbox type')
+# @click.option('--patience', default=10, help='Patience for early stopping')
 def run(spec_file, inputs, model_name, output_path, load_backup, iterations, samplers, sandbox_type):
   """ Execute function-search algorithm:
 
