@@ -17,6 +17,7 @@
 import logging
 
 from funsearch import code_manipulation
+from funsearch.StatsProblemManager import statsManager
 
 
 def _extract_function_names(specification: str) -> tuple[str, str]:
@@ -45,6 +46,7 @@ def run(samplers, database, iterations: int = -1):
             current_iteration += 1
             logging.info(f"Iteration {current_iteration}")
             # TODO: Aqui se puede implementar un criterio de parada
+            print(statsManager)
             # esto seria leyendo un archivo
             for s in samplers:
                 # statics = file()

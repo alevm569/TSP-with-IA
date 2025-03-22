@@ -18,11 +18,13 @@ import ast
 import re
 from collections.abc import Sequence
 import copy
+from datetime import datetime
 from typing import Any, Tuple
 
 from funsearch import code_manipulation
 from funsearch import programs_database
 from funsearch import sandbox
+from funsearch.StatsProblemManager import statsManager
 
 """
   Regex to find all methods named 'priority_vX'.
@@ -167,15 +169,28 @@ class Evaluator:
         new_function, program = _sample_to_program(
             sample, version_generated, self._template, self._function_to_evolve)
 
+        statsManager.read_from_file()
         scores_per_test = {}
+        stats_per_test = {}
+        # inputs -> input sequence
         for current_input in self._inputs:
+            start_time = datetime.now()
+            # test_output -> is the solution of problem (TSP, shortest path)
             test_output, runs_ok = self._sandbox.run(
                 program, self._function_to_run, current_input, self._timeout_seconds)
+            delta_time = (datetime.now() - start_time).microseconds / 1000
             if (runs_ok and not _calls_ancestor(program, self._function_to_evolve)
                     and test_output is not None):
                 if not isinstance(test_output, (int, float)):
                     raise ValueError('@function.run did not return an int/float score.')
                 scores_per_test[current_input] = test_output
+                stats_per_test[current_input] = {
+                    'test_output': test_output,
+                    'delta_time': delta_time
+                }
         if scores_per_test:
             # TODO: Register stats for the program.
+            # get best score, test_output and delta_time (the lowest)
+            best_score = min(stats_per_test.values(), key=lambda x: x['test_output'])
+            statsManager.register_stats(best_score['test_output'], best_score['delta_time'], version_generated)
             self._database.register_program(new_function, island_id, scores_per_test)
