@@ -310,6 +310,8 @@ class Island:
     # Replace functions in the template with the list constructed here.
     prompt_program = dataclasses.replace(self._template, functions=versioned_functions)
     eval_function = self._template.get_function('evaluate')
+    # TODO: Vale function distance should be outside
+    # distance_function = self._template.get_function('calculate_route_distance')
     prompt_program = dataclasses.replace(prompt_program, functions=[eval_function] + versioned_functions)
     return str(prompt_program)
 

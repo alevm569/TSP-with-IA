@@ -25,6 +25,8 @@ from funsearch import code_manipulation
 from funsearch import programs_database
 from funsearch import sandbox
 from funsearch.StatsProblemManager import statsManager
+from funsearch.code_extractor import CodeExtractor
+from funsearch.code_manipulation import Function
 
 """
   Regex to find all methods named 'priority_vX'.
@@ -72,7 +74,8 @@ def _find_method_implementation(generated_code: str) -> Tuple[str, str]:
     # Extract only the last found feature
     last_match = matches[-1].strip()
     function_name = METHOD_NAME_MATCHER.search(last_match).group()
-    return last_match, function_name
+    filter_function, final_function_name = CodeExtractor(last_match, function_name).extract()
+    return filter_function, final_function_name
 
 
 def _trim_function_body(generated_code: str) -> str:
@@ -127,10 +130,13 @@ def _sample_to_program(
         version_generated: int | None,
         template: code_manipulation.Program,
         function_to_evolve: str,
-) -> tuple[code_manipulation.Function, str]:
+) -> tuple[None, None] | tuple[Function, str]:
     """Returns the compiled generated function and the full runnable program."""
     generated_code = ''.join(generated_code)
     body = _trim_function_body(generated_code)
+    if len(body) == 0:
+        print("No deberia continuar")
+        return None, None
     if version_generated is not None:
         body = code_manipulation.rename_function_calls(
             body,
@@ -185,6 +191,9 @@ class Evaluator:
         """Compiles the sample into a program and executes it on test inputs."""
         new_function, program = _sample_to_program(
             sample, version_generated, self._template, self._function_to_evolve)
+        if new_function is None or program is None:
+            print("nada que hacer")
+            return
 
         statsManager.read_from_file()
         scores_per_test = {}
@@ -192,10 +201,12 @@ class Evaluator:
         # inputs -> input sequence
         for current_input in self._inputs:
             start_time = datetime.now()
+            print("Current input:", current_input, start_time)
             # test_output -> is the solution of problem (TSP, shortest path)
             test_output, runs_ok = self._sandbox.run(
                 program, self._function_to_run, current_input, self._timeout_seconds)
             delta_time = (datetime.now() - start_time).microseconds / 1000
+            print("Test output:", test_output, datetime.now() )
             if (runs_ok and not _calls_ancestor(program, self._function_to_evolve)
                     and test_output is not None):
                 if not isinstance(test_output, (int, float)):
