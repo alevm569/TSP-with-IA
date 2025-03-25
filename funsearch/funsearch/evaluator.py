@@ -33,7 +33,7 @@ from funsearch.StatsProblemManager import statsManager
   - ` or ' or # without indentation
 """ #TODO: vale and Guille, check if this regex is correct METHOD_MATCHER = re.compile(r"```python(.*?)def priority_v(.*)*?(.*?)```python")
 # METHOD_MATCHER = re.compile(r"def priority_v\d\(.*?\) -> float:(?:\s*(?:[ \t]*(?!def|#|`|').*(?:\n|$)))+")
-METHOD_MATCHER = re.compile(r'```python\n(.*?)```', re.DOTALL)
+METHOD_MATCHER = re.compile(r'```python\n(.*?def .*?)```', re.DOTALL)
 METHOD_NAME_MATCHER = re.compile(r"(priority_v\d+|find_best_route_v\d+|find_best_route)")
 
 
@@ -46,8 +46,12 @@ class _FunctionLineVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: Any) -> None:  # pylint: disable=invalid-name
         """Collects the end line number of the target function."""
-        if node.name == self._target_function_name:
+        print("node name",node.name)
+        print("target_function_name",self._target_function_name)
+        if self._target_function_name in node.name:
             self._function_end_line = node.end_lineno
+        else:
+            self._function_end_line = -1
         self.generic_visit(node)
 
     @property
@@ -80,10 +84,16 @@ def _trim_function_body(generated_code: str) -> str:
 
     method_name = "fake_function_header"
     # Check is the response only a continuation for our prompt or full method implementation with header
-    if "def priority_v" in generated_code or "def find_best_route" in generated_code:
+    if any(keyword in generated_code for keyword in ["def priority_v", "def find_best_route", "find_best_route_v"]):
         code, method_name = _find_method_implementation(generated_code)
+        print(f"Extracted code:\n{code}")
+        print(f"Method name:\n{method_name}")
     else:
         code = f'def {method_name}():\n{generated_code}'
+
+    if not code.strip().startswith("def"):
+        print("No valid function definition found in the code.")
+        return ''
 
     # Finally parse the code to make sure it's valid Python
     tree = None
@@ -99,10 +109,17 @@ def _trim_function_body(generated_code: str) -> str:
                 print("No valid code could be parsed.")
                 return ''
 
+    print(f"Generated code:\n{generated_code}")
+    print(f"Code passed to AST:\n{code}")
+
     visitor = _FunctionLineVisitor(method_name)
     visitor.visit(tree)
     body_lines = code.splitlines()[1:visitor.function_end_line]
+    if not body_lines:
+        print("No valid body lines found in the function.")
+        return ''
     trimmed_body = '\n'.join(body_lines) + '\n\n'
+    print(f"Trimmed body:\n{trimmed_body}")
     return trimmed_body
 
 def _sample_to_program(
@@ -192,5 +209,8 @@ class Evaluator:
             # TODO: Register stats for the program.
             # get best score, test_output and delta_time (the lowest)
             best_score = min(stats_per_test.values(), key=lambda x: x['test_output'])
+            print("Best score:", best_score)
             statsManager.register_stats(best_score['test_output'], best_score['delta_time'], version_generated)
+            statsManager.read_from_file()
+            print("Stats registered:", best_score['test_output'], best_score['delta_time'])
             self._database.register_program(new_function, island_id, scores_per_test)
