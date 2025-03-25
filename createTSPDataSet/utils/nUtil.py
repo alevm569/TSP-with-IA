@@ -1,7 +1,7 @@
 from typing import List, Tuple
 import numpy as np
 
-from createTSPDataSet.utils.distanceUtil import calculate_path_distance, check_route
+from utils.distanceUtil import calculate_path_distance, check_route
 
 
 # find the best path using the nearest neighbor heuristic

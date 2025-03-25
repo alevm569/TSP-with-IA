@@ -3,13 +3,14 @@ import traceback
 import numpy as np
 import datetime as dt
 
-from createTSPDataSet import tsp_logger, tsp_detail_logger
-from createTSPDataSet.TSPSolution import TSPSolution
-from createTSPDataSet.TSP_ACO.TSP_ACO import ant_system, plot_best_path
-from createTSPDataSet.utils.constants import Cities, Distances
-from createTSPDataSet.utils.distanceUtil import get_matrix_distance_from_distance_dict
-from createTSPDataSet.utils.nUtil import optimize_with_2_opt_util
-from createTSPDataSet.utils.plotUtil import plot_route
+
+from TSPSolution import TSPSolution
+from TSP_ACO.TSP_ACO import ant_system
+from create_loggers import tsp_logger, tsp_detail_logger
+from utils.constants import Cities, Distances
+from utils.distanceUtil import get_matrix_distance_from_distance_dict
+from utils.nUtil import optimize_with_2_opt_util
+from utils.plotUtil import plot_route
 
 
 def generate_aco_solution(cities: Cities, distances: Distances, show_name: bool = False, show_plot: bool = False, verbose: bool = True):

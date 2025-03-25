@@ -2,8 +2,8 @@ import hashlib
 import uuid
 from enum import Enum
 from typing import List
-from createTSPDataSet.utils.constants import Cities, Distances, EdgeList
-from createTSPDataSet.utils.distanceUtil import get_matrix_distance_from_distance_dict
+from utils.constants import Cities, Distances, EdgeList
+from utils.distanceUtil import get_matrix_distance_from_distance_dict
 
 class TSPSource(Enum):
     NEAREST_NEIGHBOR = "NEAREST_NEIGHBOR"
@@ -55,5 +55,5 @@ class TSPSolution:
             pickle.dump(self, f)
 
     def plot(self):
-        from createTSPDataSet.utils.plotUtil import plot_route
+        from utils.plotUtil import plot_route
         plot_route(self.cities, self.distances, self.route, title=f"Sample solved with {self.source.name}")

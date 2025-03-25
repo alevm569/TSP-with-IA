@@ -4,8 +4,8 @@ create_path = os.path.dirname(script_path)
 project_path = os.path.dirname(create_path)
 sys.path.append(project_path)
 
-from createTSPDataSet.TSP import data_path
-from createTSPDataSet.TSPSolution import TSPSolution
+from TSP import data_path
+from TSPSolution import TSPSolution
 
 
 # create a reader for TSP Solution, use the above class to read the solution

@@ -3,11 +3,11 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict
 
-from createTSPDataSet import tsp_logger, tsp_detail_logger
-from createTSPDataSet.TSP import get_best_path_nearest_neighbor_and_2opt
-from createTSPDataSet.TSPSolution import TSPSolution
-from createTSPDataSet.TSP_LP.TSP_LP import TSP
-from createTSPDataSet.utils.constants import Cities, Heuristics, Edges
+from TSP import get_best_path_nearest_neighbor_and_2opt
+from TSPSolution import TSPSolution
+from TSP_LP.TSP_LP import TSP
+from create_loggers import tsp_logger, tsp_detail_logger
+from utils.constants import Cities, Heuristics, Edges
 
 
 def generate_solution_with_heuristics(cities, distances, seed: int = 123, n_solutions: int = 5, verbose: bool = False) -> List[TSPSolution]:

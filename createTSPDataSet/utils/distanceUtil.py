@@ -3,7 +3,7 @@ import datetime as dt
 
 import numpy as np
 
-from createTSPDataSet.utils.constants import Cities
+from utils.constants import Cities
 
 
 def get_path(edges: dict, initial_city: str, path: List[str]):

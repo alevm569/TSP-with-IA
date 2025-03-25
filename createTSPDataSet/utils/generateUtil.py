@@ -2,7 +2,7 @@ import math
 import random
 import string
 from typing import List
-from createTSPDataSet.utils.constants import Distances, Cities
+from utils.constants import Distances, Cities
 
 
 def generate_cities(n_cities: int) -> Cities:

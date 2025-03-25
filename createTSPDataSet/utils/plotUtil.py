@@ -1,8 +1,8 @@
 
 from matplotlib import pyplot as plt
 
-from createTSPDataSet.utils.constants import Edges, Cities, Distances
-from createTSPDataSet.utils.distanceUtil import calculate_path_distance
+from utils.constants import Edges, Cities, Distances
+from utils.distanceUtil import calculate_path_distance
 
 
 def plot_route(cities: Cities, distances: Distances, route, show_name=True, title=None, marked_edges: Edges=None):

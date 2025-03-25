@@ -2,11 +2,11 @@ import re
 
 import pyomo.environ as pyo
 
-from createTSPDataSet import tsp_logger
-from createTSPDataSet.utils.constants import Heuristics
-from createTSPDataSet.utils.distanceUtil import *
-from createTSPDataSet.utils.nUtil import find_best_route_2opt
-from createTSPDataSet.utils.plotUtil import plot_route
+from create_loggers import tsp_logger
+from utils.constants import Heuristics
+from utils.distanceUtil import *
+from utils.nUtil import find_best_route_2opt
+from utils.plotUtil import plot_route
 
 
 class TSP:

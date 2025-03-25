@@ -63,6 +63,6 @@ class Config:
     samples_per_prompt: int = 4
     serverIP: str = 'localhost'  # 172.21.230.21
     api_endpoint: str = f"http://{serverIP}:11434/api/generate"
-    model_name: str = "deepseek-coder:6.7b"
-    # model_name: str = "codegemma:latest"
+    # model_name: str = "deepseek-coder:6.7b"
+    model_name: str = "codegemma:latest"
     # model_name: str = "Eomer/gpt-3.5-turbo:latest"

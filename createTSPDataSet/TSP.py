@@ -1,21 +1,23 @@
 # ---- mandatory imports ----
 import os
 import sys
+
+from create_loggers import tsp_logger
+
 script_path = os.path.dirname(os.path.abspath(__file__))
 project_path = os.path.dirname(script_path)
 sys.path.append(project_path)
 # ---- mandatory imports ----
 import datetime as dt
 from typing import List
-from createTSPDataSet.TSPSolution import TSPSolution, TSPSource
-from createTSPDataSet.TSP_ACO.TSP_ACO_Generate import generate_aco_solution
-from createTSPDataSet.utils.plotUtil import plot_route
-from createTSPDataSet import current_dir, tsp_logger
-from createTSPDataSet.utils.constants import Heuristics, Cities, Distances
-from createTSPDataSet.utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
-from createTSPDataSet.utils.generateUtil import generate_cities_with_distances
+from TSPSolution import TSPSolution, TSPSource
+from TSP_ACO.TSP_ACO_Generate import generate_aco_solution
+from utils.plotUtil import plot_route
+from utils.constants import Heuristics, Cities, Distances
+from utils.nUtil import find_nearest_neighbor_path_solution, find_best_route_2opt
+from utils.generateUtil import generate_cities_with_distances
 
-data_path = os.path.join(current_dir, "data")
+data_path = os.path.join(script_path, "data")
 
 
 def get_best_path_nearest_neighbor_and_2opt(cities: Cities, distances: Distances, seed=123):
@@ -32,7 +34,7 @@ def report_time(start_time: dt.datetime, end_time: dt.datetime):
 
 
 def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
-    from createTSPDataSet.TSP_LP.TSP_LP_Generate import generate_solution_with_heuristics, get_edges_from_solution, \
+    from TSP_LP.TSP_LP_Generate import generate_solution_with_heuristics, get_edges_from_solution, \
         get_solution_with_lp
 
     tsp_logger.info(f"--> Generating sample with {n_cities} cities.")
