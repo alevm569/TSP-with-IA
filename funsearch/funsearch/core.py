@@ -33,11 +33,13 @@ def _extract_function_names(specification: str) -> tuple[str, str]:
     return evolve_functions[0], run_functions[0]
 
 
-def run(samplers, database, iterations: int = -1):
+def run(samplers, database, iterations: int = -1,  patience_limit: int = 10):
     """Launches a FunSearch experiment."""
     msg = "without limit" if iterations < 0 else f"for {iterations} iterations"
     logging.info(f"Starting FunSearch {msg}")
     current_iteration = 0  # Track the number of completed iterations
+    patience = 0
+
     try:
         # This loop can be executed in parallel on remote sampler machines. As each
         # sampler enters an infinite loop, without parallelization only the first
@@ -46,15 +48,35 @@ def run(samplers, database, iterations: int = -1):
             current_iteration += 1
             logging.info(f"Iteration {current_iteration}")
             # TODO: Aqui se puede implementar un criterio de parada
-            print(statsManager)
-            # esto seria leyendo un archivo
+            print(f"StatsManager: {statsManager.to_dict()}")  # Debugging stats
+            print("best_solution_number", statsManager.best_solution_number)
+            print("last_best_result", statsManager.last_best_result)
+            print("self.patience", patience)
+            
+            if patience >= patience_limit:
+                logging.info(f"Stopping early due to patience limit ({patience_limit}) reached, with solution ({statsManager.best_solution_number}).")
+                break
+
+            # Iterate over samplers
             for s in samplers:
                 # statics = file()
                 # if statics.patience == 20:
                 #     break
                 s.sample()
+
+            # Update patience based on statsManager
+            if statsManager.last_best_result > statsManager.best_solution_number:
+                # Found a better solution, reset patience
+                statsManager.last_best_result = statsManager.best_solution_number
+                patience = 0
+            else:
+                # No improvement, increment patience
+                patience += 1
+
+            # Decrement iterations if a limit is set   
             if iterations > 0:
                 iterations -= 1
+
     except KeyboardInterrupt:
         logging.info("Keyboard interrupt. Stopping.")
     database.backup()

@@ -1,10 +1,12 @@
 import logging
 
 import ast
+import astor
 import os
 import pathlib
 import sys
 from typing import Any
+import textwrap
 
 import cloudpickle
 
@@ -43,13 +45,36 @@ class DummySandbox:
     namespace = DummySandbox.compile_code(program)
     return namespace[function_to_run](test_input)
 
+  def normalize_indentation(program: str) -> str:
+    """Corrige la indentación antes de pasar el código a ast.parse()"""
+    return textwrap.dedent(program).strip()
+
   @staticmethod
   def compile_code(program: str):
     namespace = {}
 
+    program =  DummySandbox.normalize_indentation(program)
+    print("Parsing program...", program)
+    print("Program (repr):", repr(program))
     parsed_code = ast.parse(program)
-    compiled_code = compile(parsed_code, filename="<ast>", mode="exec")
-    exec(compiled_code, namespace) # AQUI ejecuta el script
+    print("Parsed code:", parsed_code)
+
+    print("Compiling program2...")
+    print("Python version:", sys.version)
+    # compiled_code = compile(parsed_code, filename="<ast>", mode="exec")
+    # print("Compiled code:", compiled_code)
+    print(ast.unparse(parsed_code))
+    try:
+      compiled_code = compile(parsed_code, filename="<ast>", mode="exec")
+      print("Compiled code:", compiled_code)
+    except SyntaxError as e:
+      print(f"SyntaxError during compilation: {e}")
+    except Exception as e:
+      print(f"Unexpected error during compilation: {e}")
+
+    print("Executing compiled code...")
+    exec(compiled_code, namespace)
+    print("Namespace after execution:", namespace)
     return namespace
 
 
@@ -97,7 +122,7 @@ class ExternalProcessSandbox(DummySandbox):
           test_input,
           timeout_seconds: int,
   ) -> tuple[Any, bool]:
-
+    print("Compiling program...")
     call_data_folder = (self.output_path / f"call{self.call_count}").absolute()
     if not call_data_folder.exists():
       call_data_folder.mkdir()
@@ -110,6 +135,8 @@ class ExternalProcessSandbox(DummySandbox):
         cloudpickle.dump(test_input, f)
     try:
       namespace = DummySandbox.compile_code(program)
+
+      print(f"Running function '{function_to_run}' with input: {test_input}")
 
       prog_file = (call_data_folder / f"prog.pickle").absolute()
       with open(prog_file, "wb+") as f:
@@ -136,6 +163,7 @@ class ExternalProcessSandbox(DummySandbox):
   @staticmethod
   def _save_diagnostics(program: str, output_path: pathlib.Path):
     filepath = output_path / "program.py"
+    print("Saving diagnostics...", program)
     logging.debug(f"Writing program to {filepath}")
     with open(filepath, "w+") as f:
       f.write(program)

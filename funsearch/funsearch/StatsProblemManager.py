@@ -67,13 +67,43 @@ class StatsProblemManager:
     def register_stats(self, new_best_solution, new_elapsed_time_ms, version_generated):
         self.best_solution_number += 1
         # TODO: check if new_elapsed_time_ms should be evaluated
-        if new_best_solution > self.last_best_result:
-            self.patience += 1
+        print("best_solution_number", self.best_solution_number)
+        print("new_best_solution", new_best_solution)
+        print("last_best_result", self.last_best_result)
+        print("self.iteration_number", self.iteration_number)
+        print("self.patience", self.patience)
+        if new_best_solution == abs(self.last_best_result):
+            # Primera ejecución: actualizar todo sin validaciones
+            self.last_best_result = new_best_solution
+            self.elapsed_time_ms = new_elapsed_time_ms
+            self.patience = 0
+            self.iteration_number = version_generated
+            self.write_to_file()
             return
-        self.last_best_result = new_best_solution
-        self.patience = 0
-        self.elapsed_time_ms = new_elapsed_time_ms
-        self.iteration_number = version_generated
-        self.write_to_file()
+        # Caso 1: Si la nueva solución es mejor, actualizar todo
+        if new_best_solution < self.last_best_result:
+            self.last_best_result = new_best_solution
+            self.elapsed_time_ms = new_elapsed_time_ms
+            self.patience = 0  # Reiniciar paciencia
+            self.iteration_number = version_generated
+            self.write_to_file()
+            return
 
+        # Caso 2: Si la solución es igual, actualizar solo si el tiempo es mejor
+        if new_best_solution == self.last_best_result:
+            if new_elapsed_time_ms < self.elapsed_time_ms:
+                self.elapsed_time_ms = new_elapsed_time_ms
+                self.iteration_number = version_generated
+                self.write_to_file()
+            return  # No hacer nada si el tiempo es igual o peor
+
+        # Caso 3: Si la nueva solución es peor
+        if new_best_solution > self.last_best_result:
+            if new_elapsed_time_ms < self.elapsed_time_ms:
+                self.elapsed_time_ms = new_elapsed_time_ms  # Solo actualizar tiempo si es mejor
+                self.iteration_number = version_generated
+                self.write_to_file()
+            else:
+                self.patience += 1  # Solo incrementar paciencia si no mejoró nada
+            return
 statsManager = StatsProblemManager()

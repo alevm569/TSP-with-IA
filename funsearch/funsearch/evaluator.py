@@ -20,6 +20,7 @@ from collections.abc import Sequence
 import copy
 from datetime import datetime
 from typing import Any, Tuple
+import textwrap
 
 from funsearch import code_manipulation
 from funsearch import programs_database
@@ -27,6 +28,7 @@ from funsearch import sandbox
 from funsearch.StatsProblemManager import statsManager
 from funsearch.code_extractor import CodeExtractor
 from funsearch.code_manipulation import Function
+
 
 """
   Regex to find all methods named 'priority_vX'.
@@ -122,6 +124,7 @@ def _trim_function_body(generated_code: str) -> str:
         print("No valid body lines found in the function.")
         return ''
     trimmed_body = '\n'.join(body_lines) + '\n\n'
+    # trimmed_body = textwrap.dedent('\n'.join(body_lines)) + '\n\n'
     print(f"Trimmed body:\n{trimmed_body}")
     return trimmed_body
 
@@ -135,7 +138,7 @@ def _sample_to_program(
     generated_code = ''.join(generated_code)
     body = _trim_function_body(generated_code)
     if len(body) == 0:
-        print("No deberia continuar")
+        print("Should not continue")
         return None, None
     if version_generated is not None:
         body = code_manipulation.rename_function_calls(
@@ -192,7 +195,7 @@ class Evaluator:
         new_function, program = _sample_to_program(
             sample, version_generated, self._template, self._function_to_evolve)
         if new_function is None or program is None:
-            print("nada que hacer")
+            print("Nothing to do")
             return
 
         statsManager.read_from_file()
@@ -203,10 +206,20 @@ class Evaluator:
             start_time = datetime.now()
             print("Current input:", current_input, start_time)
             # test_output -> is the solution of problem (TSP, shortest path)
+            print("Program passed to sandbox:\n", program)
+            print("Function to run:", self._function_to_run)
+            print("Input passed to sandbox:", current_input)
             test_output, runs_ok = self._sandbox.run(
                 program, self._function_to_run, current_input, self._timeout_seconds)
             delta_time = (datetime.now() - start_time).microseconds / 1000
-            print("Test output:", test_output, datetime.now() )
+            print(f"Sandbox output: {test_output}, Runs OK: {runs_ok}")
+
+            if not runs_ok:
+                print(f"Sandbox failed for input: {current_input}")
+                print(f"Program:\n{program}")
+                print(f"Function to run: {self._function_to_run}")
+                continue
+
             if (runs_ok and not _calls_ancestor(program, self._function_to_evolve)
                     and test_output is not None):
                 if not isinstance(test_output, (int, float)):
@@ -222,6 +235,5 @@ class Evaluator:
             best_score = min(stats_per_test.values(), key=lambda x: x['test_output'])
             print("Best score:", best_score)
             statsManager.register_stats(best_score['test_output'], best_score['delta_time'], version_generated)
-            statsManager.read_from_file()
             print("Stats registered:", best_score['test_output'], best_score['delta_time'])
             self._database.register_program(new_function, island_id, scores_per_test)
