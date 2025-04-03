@@ -1,7 +1,6 @@
 import logging
 
 import ast
-import astor
 import os
 import pathlib
 import sys
@@ -53,7 +52,7 @@ class DummySandbox:
   def compile_code(program: str):
     namespace = {}
 
-    program =  DummySandbox.normalize_indentation(program)
+    # program =  DummySandbox.normalize_indentation(program)
     print("Parsing program...", program)
     print("Program (repr):", repr(program))
     parsed_code = ast.parse(program)

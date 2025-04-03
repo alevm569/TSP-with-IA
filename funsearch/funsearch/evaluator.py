@@ -192,9 +192,9 @@ class Evaluator:
             version_generated: int | None,
     ) -> None:
         """Compiles the sample into a program and executes it on test inputs."""
-        new_function, program = _sample_to_program(
+        new_function, program_str = _sample_to_program(
             sample, version_generated, self._template, self._function_to_evolve)
-        if new_function is None or program is None:
+        if new_function is None or program_str is None:
             print("Nothing to do")
             return
 
@@ -206,21 +206,21 @@ class Evaluator:
             start_time = datetime.now()
             print("Current input:", current_input, start_time)
             # test_output -> is the solution of problem (TSP, shortest path)
-            print("Program passed to sandbox:\n", program)
+            print("Program passed to sandbox:\n", program_str)
             print("Function to run:", self._function_to_run)
             print("Input passed to sandbox:", current_input)
             test_output, runs_ok = self._sandbox.run(
-                program, self._function_to_run, current_input, self._timeout_seconds)
+                program_str, self._function_to_run, current_input, self._timeout_seconds)
             delta_time = (datetime.now() - start_time).microseconds / 1000
             print(f"Sandbox output: {test_output}, Runs OK: {runs_ok}")
 
             if not runs_ok:
                 print(f"Sandbox failed for input: {current_input}")
-                print(f"Program:\n{program}")
+                print(f"Program:\n{program_str}")
                 print(f"Function to run: {self._function_to_run}")
                 continue
 
-            if (runs_ok and not _calls_ancestor(program, self._function_to_evolve)
+            if (runs_ok and not _calls_ancestor(program_str, self._function_to_evolve)
                     and test_output is not None):
                 if not isinstance(test_output, (int, float)):
                     raise ValueError('@function.run did not return an int/float score.')

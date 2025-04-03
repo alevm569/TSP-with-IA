@@ -29,6 +29,8 @@ import tokenize
 
 from absl import logging
 
+from funsearch.constants import indentation
+
 
 @dataclasses.dataclass
 class Function:
@@ -48,7 +50,7 @@ class Function:
       # self.docstring is already indented on every line except the first one.
       # Here, we assume the indentation is always two spaces.
       new_line = '\n' if self.body else ''
-      function += f'  """{self.docstring}"""{new_line}'
+      function += f'{indentation}"""{self.docstring}"""{new_line}'
     # self.body is already indented.
     function += self.body + '\n\n'
     return function
@@ -76,7 +78,8 @@ class Program:
 
   def __str__(self) -> str:
     program = f'{self.preface}\n' if self.preface else ''
-    program += '\n'.join([str(f) for f in self.functions])
+    for function in self.functions:
+      program += '\n' + str(function)
     return program
 
   def find_function_index(self, function_name: str) -> int:
