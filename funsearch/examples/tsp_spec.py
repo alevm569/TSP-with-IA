@@ -4,6 +4,7 @@ PROVIDE just the python code for the new version of the function, i.e. find_best
 import numpy as np
 from numpy import ndarray
 import funsearch
+import itertools
 
 """Distances matrix between cities"""
 distances = np.array([

@@ -91,6 +91,9 @@ def _trim_function_body(generated_code: str) -> str:
     # Check is the response only a continuation for our prompt or full method implementation with header
     if any(keyword in generated_code for keyword in ["def priority_v", "def find_best_route", "find_best_route_v"]):
         code, method_name = _find_method_implementation(generated_code)
+        if code is None:
+            print("No valid code found.")
+            return ''
         print(f"Extracted code:\n{code}")
         print(f"Method name:\n{method_name}")
     else:
