@@ -95,8 +95,7 @@ class ProgramsDatabase:
           Island(template, function_to_evolve, config.functions_per_prompt,
                  config.cluster_sampling_temperature_init,
                  config.cluster_sampling_temperature_period))
-    self._best_score_per_island: list[float] = (
-        [-float('inf')] * config.num_islands)
+    self._best_score_per_island: list[float] = ([float('inf')] * config.num_islands)
     self._best_program_per_island: list[code_manipulation.Function | None] = (
         [None] * config.num_islands)
     self._best_scores_per_test_per_island: list[ScoresPerTest | None] = (
@@ -152,7 +151,8 @@ class ProgramsDatabase:
     self._islands[island_id].register_program(program, scores_per_test)
     score = _reduce_score(scores_per_test)
     # TODO: Vale This evaluation should be adapted as needed for the problem, i.e TSP
-    if score < self._best_score_per_island[island_id]:
+    if score <= self._best_score_per_island[island_id]:
+      print("_________________________________________________________")
       self._best_program_per_island[island_id] = program
       self._best_scores_per_test_per_island[island_id] = scores_per_test
       self._best_score_per_island[island_id] = score
