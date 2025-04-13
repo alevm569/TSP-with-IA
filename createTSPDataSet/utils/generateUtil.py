@@ -4,13 +4,22 @@ import string
 from typing import List
 from utils.constants import Distances, Cities
 
+def generate_unique_coordinates(cities: dict, n_tries=0):
+    if n_tries > 10:
+        return round(random.uniform(-1, 1), 2), round(random.uniform(-1, 1), 2)
+    # check coordinate is unique in cities:
+    x = round(random.uniform(-1, 1), 2)  # Coordinate x random between -1 and 1
+    y = round(random.uniform(-1, 1), 2)  # Coordinate y random between -1 and 1
+    for (x1, y1) in cities.items():
+        if x1 == x and y1 == y:
+            return generate_unique_coordinates(cities, n_tries + 1)
+    return x, y
 
 def generate_cities(n_cities: int) -> Cities:
     cities = {}
     for i in range(n_cities):
         ciudad = f'{i}'
-        x = round(random.uniform(0, 1), 2) # Coordinate x random between -100 and 100
-        y = round(random.uniform(0, 1), 2)  # Coordinate y random between -100 and 100
+        x, y = generate_unique_coordinates(cities)
         cities[ciudad] = (x, y)
     return cities
 

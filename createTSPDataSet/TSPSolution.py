@@ -25,6 +25,7 @@ class TSPSolution:
         self.edges : EdgeList = []
         self.create_edges_path()
         self.source: TSPSource = TSPSource.NONE
+        self.best_algorithm: List[str] = []
 
 
     def get_hash_id(self):

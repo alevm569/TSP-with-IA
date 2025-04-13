@@ -76,7 +76,7 @@ def get_edges_from_solution(solutions: List[TSPSolution]) -> (TSPSolution, TSPSo
 
 def get_solution_with_lp(cities: Cities, distances, heuristics: List[Heuristics],
                               min_solution: TSPSolution, max_solution: TSPSolution, best_edges: Edges,
-                              show_name: bool = False, show_plot: bool = False, verbose: bool = False) -> TSPSolution:
+                              show_name: bool = False, show_plot: bool = False, verbose: bool = False) -> TSPSolution | None:
     try:
         resp = generate_solution_with_lp(cities, distances, heuristics, min_solution, max_solution, best_edges, show_name, show_plot, verbose)
         if not isinstance(resp, TSPSolution):

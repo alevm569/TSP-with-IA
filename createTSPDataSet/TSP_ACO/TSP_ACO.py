@@ -14,8 +14,11 @@ class Ant:
         unvisited_cities = [city for city in range(n_cities) if city not in self.visited_cities]
         probs = np.zeros(len(unvisited_cities))
         for i, city in enumerate(unvisited_cities):
-            probs[i] = pheromones[city, self.current_city] ** alpha * \
-                       (1 / distances[city, self.current_city]) ** beta
+            if distances[city, self.current_city] > 0:
+                probs[i] = pheromones[city, self.current_city] ** alpha * \
+                           (1 / distances[city, self.current_city]) ** beta
+            else:
+                probs[i] = 0
         probs /= np.sum(probs)
         # Choose the next city
         next_city = np.random.choice(unvisited_cities, p=probs)

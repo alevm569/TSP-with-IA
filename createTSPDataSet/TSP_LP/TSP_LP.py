@@ -100,33 +100,55 @@ class TSP:
             #print(self.model.best_edges.pprint())
         return self
 
+    def solve_safely(self, mip_gap, time_limit_seconds, tee):
+        try:
+            # Solving the model
+            start_time = dt.datetime.now()
+            solver = pyo.SolverFactory('glpk')
+            solver.options['mipgap'] = mip_gap
+            solver.options['tmlim'] = time_limit_seconds
+            results = solver.solve(self.model, tee=tee)
+
+            execution_time = dt.datetime.now() - start_time
+            tsp_logger.debug(
+                f"Execution time: {delta_time_mm_ss(execution_time)}, results: {results.solver.termination_condition}")
+            self.print_min_max_distances()
+
+            # Showing the results
+            if results.solver.termination_condition == pyo.TerminationCondition.optimal:
+                tsp_logger.debug("Optimal solution found")
+            else:
+                tsp_logger.debug("No optimal solution found, but the solver has terminated")
+
+            return self.get_results()
+        except Exception as e:
+            tsp_logger.warn(f"LP with heuristics {self.heuristics} has failed")
+            return None
+
+
     def solve_model(self, mip_gap, time_limit_seconds, tee):
         if self.model is None:
             return tsp_logger.warn("Model not created yet")
 
-        # Solving the model
-        start_time = dt.datetime.now()
-        solver = pyo.SolverFactory('glpk')
-        solver.options['mipgap'] = mip_gap
-        solver.options['tmlim'] = time_limit_seconds
-        results = solver.solve(self.model, tee=tee)
-
-        execution_time = dt.datetime.now() - start_time
-        tsp_logger.debug(f"Execution time: {delta_time_mm_ss(execution_time)}, results: {results.solver.termination_condition}")
-        self.print_min_max_distances()
-
-        # Showing the results
-        if results.solver.termination_condition == pyo.TerminationCondition.optimal:
-            tsp_logger.debug("Optimal solution found")
-        else:
-            tsp_logger.debug("No optimal solution found, but the solver has terminated")
-
-        return self.get_results()
+        # Solving with all the heuristics
+        result = self.solve_safely(mip_gap, time_limit_seconds, tee)
+        if result is not None:
+            return result
+        # remove heuristics and try again
+        n_heuristics = len(self.heuristics)
+        for i in range(n_heuristics):
+            self.heuristics.pop()
+            self.create_model()
+            result = self.solve_safely(mip_gap, time_limit_seconds, tee)
+            if result is not None:
+                return result
+        tsp_logger.warn("No solution found")
+        return None
 
     def optimize_with_2_opt(self, route):
         is_right_route = check_route(route, list(self.cities.keys()))
         if not is_right_route:
-            tsp_logger.error("The solution route is incorrect", route)
+            tsp_logger.warn(f"The solution route is incorrect using heuristics: {self.heuristics}, route: {route}")
             return None
         best_route, distance = find_best_route_2opt(self.distances, route)
         is_right_route = check_route(best_route, list(self.cities.keys()))
