@@ -95,6 +95,7 @@ def save_sample(solution_list: List[TSPSolution], seed: int):
 
 if __name__ == "__main__":
     n_cities = 20
-    for i in range(1, 20):
-        generate_sample(n_cities, show_name=True, seed=i, show_plot=False)
+    for i in range(0, 20):
+         generate_sample(n_cities, show_name=True, seed=i, show_plot=False)
+    #generate_sample(n_cities, show_name=True, seed=0, show_plot=False)
 
