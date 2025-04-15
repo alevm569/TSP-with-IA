@@ -43,14 +43,17 @@ class TSPSolution:
             self.edges.append((self.route[i + 1], self.route[i]))
             self.directed_edges.append((self.route[i], self.route[i + 1]))
 
-    def save_as_pickle(self, folder_path: str):
+    def save_as_pickle(self, folder_path: str, n_cities: int):
         import os
         import pickle
-        self.hash_id = self.get_hash_id()
-        if os.path.exists(folder_path) is False:
-            os.makedirs(folder_path)
 
-        file_path = os.path.join(folder_path, f"{self.hash_id}.pkl")
+        subfolder = os.path.join(folder_path, str(n_cities))
+        os.makedirs(subfolder, exist_ok=True) 
+
+        self.hash_id = self.get_hash_id()
+        file_path = os.path.join(subfolder, f"{self.hash_id}.pkl") 
+
+        # file_path = os.path.join(folder_path, f"{self.hash_id}.pkl")
 
         with open(file_path, 'wb') as f:
             pickle.dump(self, f)

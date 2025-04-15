@@ -76,7 +76,7 @@ def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
         save_sample(solutions, seed)
 
 
-def save_sample(solution_list: List[TSPSolution], seed: int):
+def save_sample(solution_list: List[TSPSolution], seed: int, n_cities: int):
     best_solution = solution_list[0]
     for solution in solution_list:
         if solution is None:
