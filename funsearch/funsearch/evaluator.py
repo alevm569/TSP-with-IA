@@ -50,8 +50,6 @@ class _FunctionLineVisitor(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: Any) -> None:  # pylint: disable=invalid-name
         """Collects the end line number of the target function."""
-        print("node name",node.name)
-        print("target_function_name",self._target_function_name)
         if self._target_function_name in node.name:
             self._function_end_line = node.end_lineno
         else:
@@ -94,8 +92,6 @@ def _trim_function_body(generated_code: str) -> str:
         if code is None:
             print("No valid code found.")
             return ''
-        print(f"Extracted code:\n{code}")
-        print(f"Method name:\n{method_name}")
     else:
         code = f'def {method_name}():\n{generated_code}'
 
@@ -117,9 +113,6 @@ def _trim_function_body(generated_code: str) -> str:
                 print("No valid code could be parsed.")
                 return ''
 
-    print(f"Generated code:\n{generated_code}")
-    print(f"Code passed to AST:\n{code}")
-
     visitor = _FunctionLineVisitor(method_name)
     visitor.visit(tree)
     body_lines = code.splitlines()[1:visitor.function_end_line]
@@ -127,8 +120,6 @@ def _trim_function_body(generated_code: str) -> str:
         print("No valid body lines found in the function.")
         return ''
     trimmed_body = '\n'.join(body_lines) + '\n\n'
-    # trimmed_body = textwrap.dedent('\n'.join(body_lines)) + '\n\n'
-    print(f"Trimmed body:\n{trimmed_body}")
     return trimmed_body
 
 def _sample_to_program(
@@ -207,20 +198,13 @@ class Evaluator:
         # inputs -> input sequence
         for current_input in self._inputs:
             start_time = datetime.now()
-            print("Current input:", current_input, start_time)
             # test_output -> is the solution of problem (TSP, shortest path)
-            print("Program passed to sandbox:\n", program_str)
-            print("Function to run:", self._function_to_run)
-            print("Input passed to sandbox:", current_input)
             test_output, runs_ok = self._sandbox.run(
                 program_str, self._function_to_run, current_input, self._timeout_seconds)
             delta_time = (datetime.now() - start_time).microseconds / 1000
             print(f"Sandbox output: {test_output}, Runs OK: {runs_ok}")
 
             if not runs_ok:
-                print(f"Sandbox failed for input: {current_input}")
-                print(f"Program:\n{program_str}")
-                print(f"Function to run: {self._function_to_run}")
                 continue
 
             if (runs_ok and not _calls_ancestor(program_str, self._function_to_evolve)
@@ -237,7 +221,6 @@ class Evaluator:
             # get best score, test_output and delta_time (the lowest)
             best_score = min(stats_per_test.values(), key=lambda x: x['test_output'])
             statsManager.register_stats(best_score['test_output'], best_score['delta_time'], version_generated)
-            print("Stats registered:", best_score['test_output'], best_score['delta_time'])
             # if best_score['test_output'] < statsManager.last_best_result:
             if island_id != None:
                 self._database.save_best_programs(program_str, best_score['test_output'], island_id)
