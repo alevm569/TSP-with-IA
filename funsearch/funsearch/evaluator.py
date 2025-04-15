@@ -236,7 +236,9 @@ class Evaluator:
             # TODO: Register stats for the program.
             # get best score, test_output and delta_time (the lowest)
             best_score = min(stats_per_test.values(), key=lambda x: x['test_output'])
-            print("Best score:", best_score)
             statsManager.register_stats(best_score['test_output'], best_score['delta_time'], version_generated)
             print("Stats registered:", best_score['test_output'], best_score['delta_time'])
+            # if best_score['test_output'] < statsManager.last_best_result:
+            if island_id != None:
+                self._database.save_best_programs(program_str, best_score['test_output'], island_id)
             self._database.register_program(new_function, island_id, scores_per_test)

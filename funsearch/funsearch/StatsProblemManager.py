@@ -72,7 +72,7 @@ class StatsProblemManager:
         print("last_best_result", self.last_best_result)
         print("self.iteration_number", self.iteration_number)
         print("self.patience", self.patience)
-        if new_best_solution == abs(self.last_best_result):
+        if self.last_best_result == 0:
             # Primera ejecución: actualizar todo sin validaciones
             self.last_best_result = new_best_solution
             self.elapsed_time_ms = new_elapsed_time_ms

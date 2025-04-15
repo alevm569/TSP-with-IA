@@ -134,6 +134,19 @@ class ProgramsDatabase:
     with open(filepath, mode="wb") as f:
       self.save(f)
     self._backups_done += 1
+  
+  def save_best_programs(self, program, test_output, island_id):
+    """Saves the best programs to a file."""
+    filename = f"best_program_{self.identifier}_{test_output}_{island_id}.py"
+    p = pathlib.Path(self._config.folder_best_programs)
+    if not p.exists():
+      p.mkdir(parents=True, exist_ok=True)
+    filepath = p / filename
+    logging.info(f"Saving best programs to {filepath}.")
+
+    with open(filepath, "w+") as f:
+      f.write(program)
+      
 
   def get_prompt(self) -> Prompt:
     """Returns a prompt containing implementations from one chosen island."""
@@ -150,13 +163,12 @@ class ProgramsDatabase:
     """Registers `program` in the specified island."""
     self._islands[island_id].register_program(program, scores_per_test)
     score = _reduce_score(scores_per_test)
-    # TODO: Vale This evaluation should be adapted as needed for the problem, i.e TSP
     if score <= self._best_score_per_island[island_id]:
       print("_________________________________________________________")
       self._best_program_per_island[island_id] = program
       self._best_scores_per_test_per_island[island_id] = scores_per_test
       self._best_score_per_island[island_id] = score
-      logging.info('Best score of island %d increased to %s', island_id, score)
+      logging.info('Best score of island %d decreased to %s', island_id, score)
 
   def register_program(
       self,
