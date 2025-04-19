@@ -22,6 +22,8 @@ import numpy as np
 from funsearch import evaluator
 from funsearch import programs_database
 from ollama import OLLAMA
+import textwrap
+import re
 
 class LLM:
   """Language model that predicts continuation of provided source code."""
@@ -51,8 +53,28 @@ class LLM:
     if self.log_path is not None:
       with open(self.log_path / f"prompt_{index}.log", "a") as f:
         f.write(prompt)
-      with open(self.log_path / f"response_{index}.log", "a") as f:
-        f.write(str(response))
+      # with open(self.log_path / f"response_{index}.log", "a") as f:
+      #   f.write(str(response))
+      # Concatenar el response si es una lista
+      if isinstance(response, list):
+          response = "\n".join(response)
+
+      # Extraer el código Python del response
+      code_block = ""
+      match = re.search(r"```python\n(.*?)```", response, re.DOTALL)
+      if match:
+          code_block = match.group(1)
+          # Normalizar la indentación del código
+          code_block = textwrap.dedent(code_block).strip()
+
+      # Si no se encuentra un bloque de código, guardar el response completo
+      if not code_block:
+          code_block = response
+
+      # Guardar el código o el response formateado
+      with open(self.log_path / f"response_{index}.py", "w", encoding="utf-8") as f:
+          f.write(code_block)
+          f.write("\n")
 
 
 class Sampler:

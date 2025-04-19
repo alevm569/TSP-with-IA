@@ -39,6 +39,7 @@ class ProgramsDatabaseConfig:
     cluster_sampling_temperature_period: int = 30000
     backup_period: int = 30
     backup_folder: str = './data/backups'
+    folder_best_programs: str = './data/best_programs_solutions'
 
 
 @dataclasses.dataclass(frozen=True)
