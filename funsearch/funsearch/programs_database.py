@@ -28,6 +28,7 @@ import scipy
 
 from funsearch import code_manipulation
 from funsearch import config as config_lib
+from funsearch.constants import n_cities_graph
 
 Signature = tuple[float, ...]
 ScoresPerTest = Mapping[Any, float]
@@ -87,6 +88,9 @@ class ProgramsDatabase:
     self._config: config_lib.ProgramsDatabaseConfig = config
     self._template: code_manipulation.Program = template
     self._function_to_evolve: str = function_to_evolve
+    self._last_program_str_per_island: dict[int, str] = {}
+    self._best_program_str_per_island: dict[str, str] = {}
+
 
     # Initialize empty islands.
     self._islands: list[Island] = []
@@ -108,6 +112,9 @@ class ProgramsDatabase:
 
   def get_best_programs_per_island(self) -> Iterable[Tuple[code_manipulation.Function | None]]:
     return sorted(zip(self._best_program_per_island, self._best_score_per_island), key=lambda t: t[1], reverse=True)
+
+  def get_last_program_by_island(self, island_id):
+    return self._last_program_str_per_island.get(island_id, None)
 
   def save(self, file):
     """Save database to a file"""
@@ -135,9 +142,9 @@ class ProgramsDatabase:
       self.save(f)
     self._backups_done += 1
   
-  def save_best_programs(self, program, test_output, island_id):
+  def save_best_programs(self, program, island_id):
     """Saves the best programs to a file."""
-    filename = f"best_program_{self.identifier}_{test_output}_{island_id}.py"
+    filename = f"best_program_{self.identifier}_{island_id}_{n_cities_graph}.py"
     p = pathlib.Path(self._config.folder_best_programs)
     if not p.exists():
       p.mkdir(parents=True, exist_ok=True)
@@ -168,7 +175,7 @@ class ProgramsDatabase:
       self._best_program_per_island[island_id] = program
       self._best_scores_per_test_per_island[island_id] = scores_per_test
       self._best_score_per_island[island_id] = score
-      logging.info('Best score of island %d decreased to %s', island_id, score)
+      logging.info('Best score of island %d is %s', island_id, score)
 
   def register_program(
       self,
@@ -186,6 +193,8 @@ class ProgramsDatabase:
         self._register_program_in_island(program, island_id, scores_per_test)
     else:
       self._register_program_in_island(program, island_id, scores_per_test)
+      self._last_program_str_per_island[island_id] = str(program)
+
 
     # Check whether it is time to reset an island.
     if (time.time() - self._last_reset_time > self._config.reset_period):

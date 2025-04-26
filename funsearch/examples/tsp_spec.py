@@ -2,43 +2,54 @@
 AVOID brute force solutions, create new heuristics
 PROVIDE just the python code for the new version of the function, i.e. find_best_route_vx"""
 import numpy as np
+import math
 from numpy import ndarray
 import funsearch
-import itertools
 
-"""Distances matrix between cities"""
-distances = np.array([
-    [0, 10, 15, 20],
-    [10, 0, 35, 25],
-    [15, 35, 0, 30],
-    [20, 25, 30, 0],
-])
+from examples.util import read_distance_matrix
 
 
-def calculate_route_distance(route: tuple[int, ...], _distances: ndarray) -> float:
+def calculate_route_distance(route: tuple[int, ...], distances: ndarray) -> float:
     """
     function to calculate the total distance of a given route.
     sum the distances between cities in the route
     """
-    distance = sum(_distances[route[i], route[i + 1]] for i in range(len(route) - 1))
+    distance = sum(distances[route[i], route[i + 1]] for i in range(len(route) - 1))
     # add the distance from the last city to the first city
-    distance += _distances[route[-1], route[0]]
+    distance += distances[route[-1], route[0]]
     return int(distance)
 
 
 @funsearch.run
 def evaluate(n: int) -> float:
     """
-    Evaluate the find_best_route function, calculating the total distance of the best route.
+    Evaluate the find_best_route function, calculating the total distance of the best valid route.
+    Penalizes invalid routes (e.g., repeated or missing cities).
     """
-    # here the evaluation of the evolved function (respect the signature)
-    best_route = find_best_route(distances)
-    return calculate_route_distance(best_route, distances)
+
+    matrix_distances = read_distance_matrix()
+
+    best_route = find_best_route(matrix_distances)
+    return calculate_route_distance(best_route, matrix_distances)
 
 
 @funsearch.evolve
-def find_best_route(_distances) -> tuple[int, ...]:
+def find_best_route(_distances: np.ndarray) -> tuple[int, ...]:
     """
-    Find the best route to solve the TSP problem.
+    Objective: Find a permutation of cities that minimizes the total route distance,
+    including the return to the starting city.
+    
+    Parameters:
+    _distances (np.ndarray): A square matrix of distances between cities, shape (n, n)
+
+    You may invent or combine heuristics from scratch, or use strategies such as:
+        - nearest neighbor
+        - cheapest insertion
+        - local search
+        - 2-opt
+        - hybrid or novel heuristics of your own design
+
+    Routes must include all cities exactly once and return to the starting point.
     """
     return tuple(range(len(_distances)))
+
