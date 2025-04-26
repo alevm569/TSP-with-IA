@@ -11,6 +11,9 @@ class StatsByIsland:
     def __init__(self):
         self.ini_values()
 
+    def __str__(self):
+        return f"Stats({self.best_solution_number}, {self.patience}, {self.last_best_result}, {self.iteration_number}, {self.elapsed_time_ms})"
+
     def set_stats_path(self, path: str):
         self.stats_path = path
 

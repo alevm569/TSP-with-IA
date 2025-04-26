@@ -1,2 +1,2 @@
 indentation: str = "    "
-n_cities_graph = 50
+n_cities_graph = 20

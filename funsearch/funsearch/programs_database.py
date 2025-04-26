@@ -130,9 +130,14 @@ class ProgramsDatabase:
     for key in data.keys():
       setattr(self, key, data[key])
 
-  def backup(self):
-    filename = f"program_db_{self._function_to_evolve}_{self.identifier}_{self._backups_done}.pickle"
-    p = pathlib.Path(self._config.backup_folder)
+  def backup(self, island_id, best_program=False):
+    if best_program:
+      p = pathlib.Path(self._config.folder_best_programs)
+      filename = f"best_program_{self.identifier}_{island_id}_{n_cities_graph}.py"
+    else:
+      p = pathlib.Path(self._config.backup_folder)
+      filename = f"program_db_{self._function_to_evolve}_{self.identifier}_{self._backups_done}.pickle"
+
     if not p.exists():
       p.mkdir(parents=True, exist_ok=True)
     filepath = p / filename
@@ -141,19 +146,6 @@ class ProgramsDatabase:
     with open(filepath, mode="wb") as f:
       self.save(f)
     self._backups_done += 1
-  
-  def save_best_programs(self, program, island_id):
-    """Saves the best programs to a file."""
-    filename = f"best_program_{self.identifier}_{island_id}_{n_cities_graph}.py"
-    p = pathlib.Path(self._config.folder_best_programs)
-    if not p.exists():
-      p.mkdir(parents=True, exist_ok=True)
-    filepath = p / filename
-    logging.info(f"Saving best programs to {filepath}.")
-
-    with open(filepath, "w+") as f:
-      f.write(program)
-      
 
   def get_prompt(self) -> Prompt:
     """Returns a prompt containing implementations from one chosen island."""
@@ -182,6 +174,7 @@ class ProgramsDatabase:
       program: code_manipulation.Function,
       island_id: int | None,
       scores_per_test: ScoresPerTest,
+      is_best_program: bool = False,
   ) -> None:
     """Registers `program` in the database."""
     # In an asynchronous implementation we should consider the possibility of
@@ -206,7 +199,7 @@ class ProgramsDatabase:
       self._program_counter += 1
       if self._program_counter > self._config.backup_period:
         self._program_counter = 0
-        self.backup()
+        self.backup(island_id, is_best_program)
 
   def reset_islands(self) -> None:
     """Resets the weaker half of islands."""

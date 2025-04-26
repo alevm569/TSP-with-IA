@@ -26,7 +26,7 @@ from funsearch import code_manipulation
 from funsearch import programs_database
 from funsearch import sandbox
 from funsearch.StatsProblemManager import statsManager
-from funsearch.StatsProblemManager2 import statsManager2
+from funsearch.StatsProblemManager2 import statsManager2, Metric
 from funsearch.code_extractor import CodeExtractor
 from funsearch.code_manipulation import Function
 
@@ -196,49 +196,61 @@ class Evaluator:
         island_key = str(island_id)
         stats = statsManager2.get_stats_by_island(island_key)
 
-        best_test_output = None
-        best_delta_time = None
-        best_input_result = None
+        best_test_output = stats.last_best_result
+        best_delta_time = stats.elapsed_time_ms
+        scores_per_test = {}
 
         # inputs -> input sequence
-        for current_input in self._inputs:
-            start_time = datetime.now()
-            # test_output -> is the solution of problem (TSP, shortest path)
-            test_output, runs_ok = self._sandbox.run(
-                program_str, self._function_to_run, current_input, self._timeout_seconds)
-            delta_time = (datetime.now() - start_time).microseconds / 1000
-            print(f"Sandbox output: {test_output}, Runs OK: {runs_ok}")
+        # for current_input in self._inputs:
+        start_time = datetime.now()
+        # test_output -> is the solution of problem (TSP, shortest path)
+        test_output, runs_ok = self._sandbox.run(
+            program_str, self._function_to_run, None, self._timeout_seconds)
+        delta_time = (datetime.now() - start_time).microseconds / 1000
+        print(f"Sandbox output: {test_output}, Runs OK: {runs_ok}")
 
-            if not runs_ok:
-                continue
+        if not runs_ok:
+            return
 
-            if (runs_ok and not _calls_ancestor(program_str, self._function_to_evolve)
-                    and test_output is not None):
-                if not isinstance(test_output, (int, float)):
-                    raise ValueError('@function.run did not return an int/float score.')
-                if best_test_output is None or test_output < best_test_output:
-                    best_test_output = test_output
-                    best_delta_time = delta_time
-                    best_input_result = {tuple(self._inputs): test_output}
+        if (runs_ok and not _calls_ancestor(program_str, self._function_to_evolve)
+                and test_output is not None):
+            if not isinstance(test_output, (int, float)):
+                raise ValueError('@function.run did not return an int/float score.')
+            if test_output < best_test_output:
+                best_test_output = test_output
+                best_delta_time = delta_time
+                scores_per_test[island_id] = test_output
 
-        if best_test_output is not None and best_delta_time is not None:
+        if scores_per_test:
+            self._database.register_program(new_function, island_id, scores_per_test)
+
+        metric = Metric(best_test_output, best_delta_time)
+        if statsManager2.keep_best_solution(metric):
+            print("Best solution found:", metric.best_result, metric.best_time)
+            # Save the best solution
             stats.register_stats(best_test_output, best_delta_time, version_generated)
-            self._database.register_program(new_function, island_id, best_input_result)
+            statsManager2.set_stats_by_island(island_key, stats)
+            self._database.register_program(new_function, island_id, scores_per_test, True)
 
-            # Si este test_output es mejor que el que tenías, guarda este como el mejor de la isla
-            current_best = stats.last_best_result
-            if current_best == best_test_output:
-                self._database._best_program_str_per_island[str(island_id)] = str(new_function)
-
-        # Guardar los 3 mejores programas globales
-        all_stats = statsManager2.solution_by_island.items()
-        top_3 = sorted(
-            all_stats,
-            key=lambda item: (item[1].last_best_result, item[1].elapsed_time_ms)
-        )[:3]
-
-        for top_island_id, top_stats in top_3:
-            program_str = self._database._best_program_str_per_island.get(str(top_island_id))
-            if program_str is not None and top_island_id is not None:
-                self._database.save_best_programs(
-                    program_str, top_island_id)
+        # if best_test_output is not None and best_delta_time is not None:
+        #     stats.register_stats(best_test_output, best_delta_time, version_generated)
+        #
+        #
+        #
+        #     # Si este test_output es mejor que el que tenías, guarda este como el mejor de la isla
+        #     current_best = stats.last_best_result
+        #     if current_best == best_test_output:
+        #         self._database._best_program_str_per_island[str(island_id)] = str(new_function)
+        #
+        # # Guardar los 3 mejores programas globales
+        # all_stats = statsManager2.solution_by_island.items()
+        # top_3 = sorted(
+        #     all_stats,
+        #     key=lambda item: (item[1].last_best_result, item[1].elapsed_time_ms)
+        # )[:3]
+        #
+        # for top_island_id, top_stats in top_3:
+        #     program_str = self._database._best_program_str_per_island.get(str(top_island_id))
+        #     if program_str is not None and top_island_id is not None:
+        #         self._database.save_best_programs(
+        #             program_str, top_island_id)
