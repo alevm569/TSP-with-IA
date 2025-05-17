@@ -18,9 +18,9 @@ def calculate_route_distance(route: tuple[int, ...], distances: ndarray) -> floa
     distance = sum(distances[route[i], route[i + 1]] for i in range(len(route) - 1))
     # add the distance from the last city to the first city
     distance += distances[route[-1], route[0]]
-    print(route, distance)
-    print(distances[2,9])
-    print(distances[5,17])
+    # print(route, distance)
+    # print(distances[2,9])
+    # print(distances[5,17])
     return float(distance)
 
 
@@ -32,8 +32,14 @@ def evaluate(n: int) -> float:
     matrix_distances = read_distance_matrix()
 
     best_route = find_best_route(matrix_distances)
-    print(best_route)
+    # print(best_route)
     return calculate_route_distance(best_route, matrix_distances)
+
+def best_program_route(matrix_distances: ndarray) -> tuple[int, ...]:
+    """
+    Function to generate a random route.
+    """
+    return find_best_route(matrix_distances)
 
 
 def find_best_route(_distances: np.ndarray) -> tuple[int, ...]:
@@ -61,7 +67,7 @@ def find_best_route(_distances: np.ndarray) -> tuple[int, ...]:
 
     # Use nearest neighbor heuristic to generate an initial solution
     start_city = np.random.randint(len(_distances))
-    print(start_city)
+    # print(start_city)
     route = [start_city]
     unvisited_cities = list(range(len(_distances)))
     unvisited_cities.remove(start_city)
@@ -83,4 +89,4 @@ def find_best_route(_distances: np.ndarray) -> tuple[int, ...]:
 
     return tuple(route)
 
-print(evaluate(0))
+# print(evaluate(0))
