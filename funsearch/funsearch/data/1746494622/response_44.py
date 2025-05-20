@@ -1,0 +1,15 @@
+import numpy as np
+import math
+from numpy import ndarray
+import funsearch
+
+from examples.util import read_distance_matrix
+
+np.random.seed(42)  # Set a seed for reproducibility
+
+def find_best_route_v3(_distances: np.ndarray) -> tuple[int, ...]:
+    """Improved version of `find_best_route_v2` using ACO."""
+    num_cities = len(_distances)
+    ant_colony = funsearch.AntColony(num_cities, _distances)
+    best_route, best_distance = ant_colony.run()
+    return best_route

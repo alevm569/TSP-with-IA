@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\funsearch\container\container_main.py", line 27, in <module>
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
+  File "C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\funsearch\container\container_main.py", line 18, in main
+    ret = func(input_data)
+          ^^^^^^^^^^^^^^^^
+  File "<ast>", line 31, in evaluate
+  File "<ast>", line 77, in find_best_route
+AttributeError: module 'funsearch' has no attribute 'local_search'
