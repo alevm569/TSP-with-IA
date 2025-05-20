@@ -36,8 +36,7 @@ from funsearch.code_manipulation import Function
   With each match, start from the 'def priority_vX(' and continue until there's a new line with any of
   - a new 'def'
   - ` or ' or # without indentation
-""" #TODO: vale and Guille, check if this regex is correct METHOD_MATCHER = re.compile(r"```python(.*?)def priority_v(.*)*?(.*?)```python")
-# METHOD_MATCHER = re.compile(r"def priority_v\d\(.*?\) -> float:(?:\s*(?:[ \t]*(?!def|#|`|').*(?:\n|$)))+")
+""" 
 METHOD_MATCHER = re.compile(r'```python\n(.*?def .*?)```', re.DOTALL)
 METHOD_NAME_MATCHER = re.compile(r"(priority_v\d+|find_best_route_v\d+|find_best_route)")
 
@@ -192,18 +191,16 @@ class Evaluator:
         if new_function is None or program_str is None:
             print("Nothing to do")
             return
+        program_identifier = self._database.identifier
 
         island_key = str(island_id)
-        stats = statsManager2.get_stats_by_island(island_key)
+        stats = statsManager2.get_stats_by_island(island_key, program_identifier)
 
         best_test_output = stats.last_best_result
         best_delta_time = stats.elapsed_time_ms
         scores_per_test = {}
 
-        # inputs -> input sequence
-        # for current_input in self._inputs:
         start_time = datetime.now()
-        # test_output -> is the solution of problem (TSP, shortest path)
         test_output, runs_ok = self._sandbox.run(
             program_str, self._function_to_run, None, self._timeout_seconds)
         delta_time = (datetime.now() - start_time).microseconds / 1000
@@ -226,31 +223,7 @@ class Evaluator:
 
         metric = Metric(best_test_output, best_delta_time)
         if statsManager2.keep_best_solution(metric):
-            print("Best solution found:", metric.best_result, metric.best_time)
             # Save the best solution
             stats.register_stats(best_test_output, best_delta_time, version_generated)
-            statsManager2.set_stats_by_island(island_key, stats)
-            self._database.register_program(new_function, island_id, scores_per_test, True)
-
-        # if best_test_output is not None and best_delta_time is not None:
-        #     stats.register_stats(best_test_output, best_delta_time, version_generated)
-        #
-        #
-        #
-        #     # Si este test_output es mejor que el que tenías, guarda este como el mejor de la isla
-        #     current_best = stats.last_best_result
-        #     if current_best == best_test_output:
-        #         self._database._best_program_str_per_island[str(island_id)] = str(new_function)
-        #
-        # # Guardar los 3 mejores programas globales
-        # all_stats = statsManager2.solution_by_island.items()
-        # top_3 = sorted(
-        #     all_stats,
-        #     key=lambda item: (item[1].last_best_result, item[1].elapsed_time_ms)
-        # )[:3]
-        #
-        # for top_island_id, top_stats in top_3:
-        #     program_str = self._database._best_program_str_per_island.get(str(top_island_id))
-        #     if program_str is not None and top_island_id is not None:
-        #         self._database.save_best_programs(
-        #             program_str, top_island_id)
+            statsManager2.set_stats_by_island(island_key, stats, program_identifier)
+            self._database.backup(island_id, True, program_str)

@@ -48,11 +48,6 @@ def run(samplers, database, iterations: int = -1,  patience_limit: int = 10):
         while iterations != 0:
             current_iteration += 1
             logging.info(f"Iteration {current_iteration}")
-            # TODO: Aqui se puede implementar un criterio de parada
-            # print(f"StatsManager: {statsManager2.to_dict()}")  # Debugging stats
-            # print("best_solution_number", statsManager2.best_solution_number)
-            # print("last_best_result", statsManager2.last_best_result)
-            # print("self.patience", patience)
             
             if patience >= patience_limit:
                 logging.info(f"Stopping early due to patience limit ({patience_limit}) reached, with solution ({statsManager2.best_solution_number}).")
@@ -60,9 +55,6 @@ def run(samplers, database, iterations: int = -1,  patience_limit: int = 10):
 
             # Iterate over samplers
             for s in samplers:
-                # statics = file()
-                # if statics.patience == 20:
-                #     break
                 s.sample()
 
             # Update patience based on statsManager
@@ -80,4 +72,4 @@ def run(samplers, database, iterations: int = -1,  patience_limit: int = 10):
 
     except KeyboardInterrupt:
         logging.info("Keyboard interrupt. Stopping.")
-    database.backup()
+    database.backup(None)

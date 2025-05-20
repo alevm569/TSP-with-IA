@@ -4,15 +4,13 @@ import ast
 import os
 import pathlib
 import sys
-from typing import Any
-import textwrap
-
 import cloudpickle
+from typing import Any
+import subprocess
 
 CONTAINER_MAIN = (pathlib.Path(__file__).parent / "container" / "container_main.py").absolute()
 
 IMAGE_NAME = "funsearch_sandbox"
-
 
 class DummySandbox:
     """Base class for Sandboxes that execute the generated code.
@@ -49,7 +47,6 @@ class DummySandbox:
         namespace = {}
 
         parsed_code = ast.parse(program)
-        # compiled_code = compile(parsed_code, filename="<ast>", mode="exec")
         try:
             compiled_code = compile(parsed_code, filename="<ast>", mode="exec")
         except SyntaxError as e:
@@ -60,7 +57,7 @@ class DummySandbox:
         exec(compiled_code, namespace)
         return namespace
 
-
+    
 class ExternalProcessSandbox(DummySandbox):
     """Sandbox that executes the code in a separate Python process in the same host.
 
@@ -70,7 +67,7 @@ class ExternalProcessSandbox(DummySandbox):
   funsearch algorithm. It might be easier to set up and thus nice environment to tune the prompts and other code.
   """
 
-    def __init__(self, base_path: pathlib.Path, timeout_secs: int = 30, python_path: str = "python"):
+    def __init__(self, base_path: pathlib.Path, timeout_secs: int = 60, python_path: str = "python"):
         super(ExternalProcessSandbox, self).__init__()
 
         self.output_path = pathlib.Path(base_path) / f"sandbox{self.id}"
@@ -84,19 +81,20 @@ class ExternalProcessSandbox(DummySandbox):
                 p.mkdir(parents=True)
 
     def _exec(self, call_data_path: pathlib.Path, input_path: pathlib.Path, error_file_path: pathlib.Path):
-        """Use podman/docker to execute python in a container.
-    - The main.py shall execute the LLM generated method from prog.pickle file providing
-      input.pickle as the input for the method.
-    - main.py writes the output of the method into output.pickle.
-    Everything except the /workspace folder will be read-only so that the environment remains good
-    for future runs.
-    """
+        """Use subprocess to execute python in external process, with timeout."""
         prog_path = call_data_path / "prog.pickle"
         output_file = call_data_path / "output.pickle"
         cmd = (f"{self.python_path} {CONTAINER_MAIN} {prog_path} {input_path} {output_file}"
-               f"  2> {error_file_path}")
+            f"  2> {error_file_path}")
         logging.debug(f"Executing: {cmd}")
-        return os.system(cmd)
+
+        try:
+            ret = subprocess.run(cmd, shell=True, timeout=self.timeout_secs)
+            return ret.returncode
+        except subprocess.TimeoutExpired:
+            logging.error(f"Timeout expired after {self.timeout_secs} seconds.")
+            return -1  # Timeout error
+
 
     def run(
             self,
@@ -117,8 +115,6 @@ class ExternalProcessSandbox(DummySandbox):
                 cloudpickle.dump(test_input, f)
         try:
             namespace = DummySandbox.compile_code(program)
-
-            print(f"Running function '{function_to_run}' with input: {test_input}")
 
             prog_file = (call_data_folder / f"prog.pickle").absolute()
             with open(prog_file, "wb+") as f:
@@ -191,12 +187,12 @@ class ContainerSandbox(ExternalProcessSandbox):
 
     def _exec(self, call_data_path: pathlib.Path, input_path: pathlib.Path, error_file_path: pathlib.Path):
         """Use podman/docker to execute python in a container.
-    - The main.py shall execute the LLM generated method from prog.pickle file providing
-      input.pickle as the input for the method.
-    - main.py writes the output of the method into output.pickle.
-    Everything except the /workspace folder will be read-only so that the environment remains good
-    for future runs.
-    """
+            - The main.py shall execute the LLM generated method from prog.pickle file providing
+            input.pickle as the input for the method.
+            - main.py writes the output of the method into output.pickle.
+            Everything except the /workspace folder will be read-only so that the environment remains good
+            for future runs.
+        """
         cmd = (f"{self.executable} run "
                f"--stop-timeout={self.timeout_secs} "
                f"-v {CONTAINER_MAIN}:/main.py:ro "

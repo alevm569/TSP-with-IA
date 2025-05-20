@@ -25,28 +25,28 @@ class StatsProblemManager2:
         if cls._instance is None:
             cls._instance = super(StatsProblemManager2, cls).__new__(cls)
             cls._instance.best_solution = StatsByIsland()
-            cls._instance.best_solution.set_stats_path("stats_global.json") 
+            cls._instance.best_solution.set_stats_path("stats.json") 
             cls._instance.solution_by_island = {}
         return cls._instance
 
     def __init__(self):
         self.best_solution = StatsByIsland()
         self.solution_by_island = {}
-        self.n_best_solution = 5
+        self.n_best_solution = 3
         self.last_best_metrics = []
 
-    def get_stats_by_island(self, island_id: str) -> StatsByIsland:
+    def get_stats_by_island(self, island_id: str,program_identifier:int) -> StatsByIsland:
         if island_id not in self.solution_by_island:
             stats = StatsByIsland()
             os.makedirs("stats_per_island", exist_ok=True) 
-            path = os.path.join("stats_per_island", f"stats_island_{island_id}.json")
+            path = os.path.join("stats_per_island", f"stats_island_{island_id}_{program_identifier}.json")
             stats.set_stats_path(path)
             self.solution_by_island[island_id] = stats
         return self.solution_by_island[island_id]
 
-    def set_stats_by_island(self, island_id: str, stats: StatsByIsland):
+    def set_stats_by_island(self, island_id: str, stats: StatsByIsland, program_identifier:int):
         self.solution_by_island[island_id] = stats
-        path = os.path.join("stats_per_island", f"stats_island_{island_id}.json")
+        path = os.path.join("stats_per_island", f"stats_island_{island_id}_{program_identifier}.json")
         stats.set_stats_path(path)
         stats.write_to_file()
         self.evaluate_best_solution(stats)

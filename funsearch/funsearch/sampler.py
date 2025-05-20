@@ -38,9 +38,7 @@ class LLM:
   def _draw_sample(self, prompt: str) -> str:
     """Returns a predicted continuation of `prompt`."""
     response = self.model.prompt(prompt)
-    print("prompt", prompt)
     to_print = response[0] if isinstance(response, list) else response
-    print("model response", to_print)
     self._log(prompt, response, self.prompt_count)
     self.prompt_count += 1
     return response

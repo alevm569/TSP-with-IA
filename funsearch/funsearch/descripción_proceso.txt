@@ -1,0 +1,763 @@
+Primero generé instancias TSP con nodos 20, 50 y 100 para armar el dataset que se usará para la generación de programas, estas instancias se generaron usando dos evaluadores TSP y ACO se generan los samples en base a la resolucion del tsp de estos evaluadores, estos resultados se almacenan en un archivo de tipo pickle, este contiene esta información sobre las soluciones generadas, self.cities: Cities = cities 
+        self.distances: Distances = distances
+        self.matrix_distances = get_matrix_distance_from_distance_dict(len(cities), cities, distances)
+        self.hash_id = uuid.uuid4()
+        self.route = route
+        self.distance = distance
+        self.directed_edges : EdgeList = []
+        self.edges : EdgeList = []
+        self.create_edges_path()
+        self.source: TSPSource = TSPSource.NONE
+        self.best_algorithm: List[str] = []. se generaron 20 archivos por cada n_cities, osea 20 , 50 y 100. para la generacion de programas que resuelvan tsp mediante funsearch y llm se usaron estos parametros numero de iteraciones 3, functions_per_prompt: int = 2
+    num_islands: int = 3 por iteracion 
+    reset_period: int = 4 * 60 * 60
+    cluster_sampling_temperature_init: float = 0.1
+    cluster_sampling_temperature_period: int = 30000
+    backup_period: int = 30, el prompt del problema tsp que se manda a la llm es el siguiente """Implement a new version of the find_best_route function to solve the TSP problem.
+AVOID brute force solutions, create new heuristics and if you are going to use randomness, stabilize it by setting a seed to ensure reproducibility.
+PROVIDE just the python code for the new version of the function, i.e. find_best_route_vx"""
+import numpy as np
+import math
+from numpy import ndarray
+import funsearch
+import time
+from examples.util import read_distance_matrix
+
+
+def calculate_route_distance(route: tuple[int, ...], distances: ndarray) -> float:
+    """
+    function to calculate the total distance of a given route.
+    sum the distances between cities in the route
+    """
+    distance = sum(distances[route[i], route[i + 1]] for i in range(len(route) - 1))
+    # add the distance from the last city to the first city
+    distance += distances[route[-1], route[0]]
+    return float(distance)
+
+
+@funsearch.run
+def evaluate(n: int) -> float:
+    """
+    Evaluate the find_best_route function, calculating the total distance of the best valid route.
+    Penalizes invalid routes (e.g., repeated or missing cities).
+    """
+
+    matrix_distances = read_distance_matrix()
+
+    best_route = find_best_route(matrix_distances)
+    return calculate_route_distance(best_route, matrix_distances)
+
+
+@funsearch.evolve
+def find_best_route(_distances: np.ndarray) -> tuple[int, ...]:
+    """
+    Objective: Find a permutation of cities that minimizes the total route distance,
+    including the return to the starting city.
+    
+    Parameters:
+    _distances (np.ndarray): A square matrix of distances between cities, shape (n, n)
+
+    You may use at least one strategy or combine two or more heuristics from the list below:
+        - nearest neighbor
+        - cheapest insertion
+        - local search
+        - 2-opt
+        - hybrid or novel heuristics of your own design
+        - aco (ant colony optimization)
+        - genetic algorithms
+        - k-opt
+        - tabu search
+
+    Routes must include all cities exactly once and return to the starting point.
+    Measure the execution time to evaluate how long the algorithm takes to compute a solution.
+
+    """
+    return tuple(range(len(_distances))), el objetivo es sacar los 3 mejores programas en cada corrida, los mejores programas se determinan cuando el cálculo de la distancia de estos es menor a la anterior, de cada isla se saca el mejor programa que entrarían en el top de 3 mejores programas, de igual manera, para estos mejores programas cuenta con un archivo de estadisticas donde podemos ver estos datos {
+    "best_solution_number": 13,
+    "patience": 0,
+    "last_best_result": 12,
+    "iteration_number": 2,
+    "elapsed_time_ms": 585.404
+}, una vez encontrada los mejores programas por corrida que en este caso tendremos 3 programas, se procede a hacer la evaluación de estos programas para ver si evolucionaron o no y si estos programas logran resolver el tsp con instancias no solo de 20 sino hasta de 100. como se corrió la generacion de programas 7 veces tengo 21 archivos, 3 por cada identifier o corrida. como mencione, para estas corridas se usaron varias de las instancias tsp generadas inicialmente como dataset, para esta generacion de programas se usaron solo instancias de 20 nodos, es decir, que use 7 archivos 1 por cada corrida. esos 7 archivos se van a usar para correr todos los 3 mejores programas generados en las 7 corridas o identifiers, es decir que estas 7 instancias tsp o hash files se usarán para evaluar los 21 archivos de best program encontrados y ver su resultado de la distancia encontrada con el codigo generado por la llm, se generaron tablas con datos como el hash file, identifier de la corrida, islas y distancias. una vez que tenemos estos resultados por cada hash file o instancia tsp se puede sacar un ranking de cuales fueron en realidad los mejores programas, es decir los que tuvieron menor distancia.  para esto debo chequear a la par cual fue la mejor distancia para ese hash file usando nuestros evaluadores LP y ACO ya que estos serán nuestra fuente de verdad. Si resultado de la distancia de un best program es igual o cercana a la que otorgan los evaluadores pues estará dentro del ranking de mejores programas. Vamos a ver los 7 mejores programas y serán agregados de esta manera # Agregar al ranking
+    ranking_data.append([
+        file_hash,                 # File
+        fila_cercana[1],          # Identifier
+        N_CITIES,                 # n_cities (quemado)
+        fila_cercana[2],          # Isla
+        distancia_evaluador,      # Distancia evaluador
+        limpiar_distancia(fila_cercana[3])  # Distancia LLM
+    ]) una vez que tenemos esta tabla de ranking, te adjunto mis resultados File,Identifier,n_cities,Isla,distance evaluador,distance llm
+9517ac29c9980fad9e914ee282ef6bf9,1746499826,20,2,8.264046,8.912662448552547
+d86936d09e79a2aba5a7c6d725d8370a,1746490919,20,0,7.430698,7.6718908848874765
+f21d554720c169954571530e170582d6,1746490919,20,0,8.222199,8.798200689384425
+7f3a8f71792f79292bb99b9f8e0905eb,1746494622,20,0,7.009738,7.032191251385065
+75124e736e33ebec9fed5f8d3079726e,1746499826,20,2,5.936868,5.980726641119669
+66975d1a9599c26cff761d8a1c9468c9,1746496504,20,2,7.77795,8.627917187855635
+b6bb0fa521c532065da8243023bffc48,1746492541,20,2,7.914056,8.701346212505992. Vamos a evaluar estos 7 mejores programas para las 20 instancias generadas inicialmente de tsp con diferente numero de nodos o ciudades, osea 20 50 y 100. te adjunto el codigo para que veas lo que hago y lo describas para obtener las tablas con los datos import os
+import subprocess
+import csv
+from pathlib import Path
+
+# ===== CONFIGURACIÓN =====
+n_cities_tsp = 20
+n_cities = 100
+ranking_csv_path = r"C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\funsearch\ranking_resultado.csv"
+programs_folder = r"C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\funsearch\data\best_programs_solutions"
+test_files_folder = fr"C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\tests\tsp-{n_cities}"
+output_folder = r"C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\funsearch\test_tables_info\test_final_tables"
+output_csv_path = os.path.join(output_folder, f"test_table_{n_cities}.csv")
+
+# ===== LISTA MANUAL DEL ORDEN DE ARCHIVOS =====
+test_files_ordered_20 = [
+    "7f3a8f71792f79292bb99b9f8e0905eb.pkl",
+    "64be19dddec122f8ef541ee1d2766847.pkl",
+    "78e16ce0359765bfa0552e66218551cf.pkl",
+    "385a1bf6f35a6c27a9c25cad40c4df3b.pkl",
+    "9517ac29c9980fad9e914ee282ef6bf9.pkl",
+    "66975d1a9599c26cff761d8a1c9468c9.pkl",
+    "75124e736e33ebec9fed5f8d3079726e.pkl",
+    "391509beb2a823fbc17babf1eb32a23c.pkl",
+    "280854846b3f43a38f7fcdd2fd7ba335.pkl",
+    "aad8773c3e6b08efdaaabfdcbc0d0569.pkl",
+    "ab9c8fbdbfc61cca6a538dec8e99922a.pkl",
+    "b6bb0fa521c532065da8243023bffc48.pkl",
+    "c4fb118f4f99c798f844aedf32006b06.pkl",
+    "c9735d8041b4c52c8c9a8ca7225ab56b.pkl",
+    "d5ad73b02e658b7e7ea8bdeff94afe4c.pkl",
+    "d86936d09e79a2aba5a7c6d725d8370a.pkl",
+    "db8b501b0568b733211dcf2f1698c286.pkl",
+    "f7bf6db8397a5ca45b92061847fac3af.pkl",
+    "f21d554720c169954571530e170582d6.pkl",
+    "f71c627ecbe6fcb050a7f3399a2bbacf.pkl"
+]
+
+test_files_ordered_50 = [
+    "00b10c906510e9f3bdef6e7fcbd9fd5f.pkl",
+    "0ac59d661efa7b188c878bb7e8847625.pkl",
+    "0e744ed83055331dc26b892c03cbdf5f.pkl",
+    "2e36071082e32aa21697d42e5fb19e05.pkl",
+    "5a8d8658a88a423a0c87a9a0dec3ffd.pkl",
+    "5a6284013ce12a4d625d5bd3e3c8acdc.pkl",
+    "5e9209f502dec9e5e595f14a7a453f0.pkl",
+    "6aacc4fde8a1eb30a95652165fa65738.pkl",
+    "6d38cc5ac18a4ea9a1d9fd319a18fb261.pkl",
+    "8cd5fcef37430a1ba42617db9222de2b.pkl",
+    "8e8b2ef72a623a0bd9dc842a3b9b3d.pkl",
+    "009a78e2ea8bbb33a6dc831459460268.pkl",
+    "09e5c0155b7d12a82437296f53dd82dd.pkl",
+    "9b1298116b10c81ac1cc7d3fcde31aa6.pkl",
+    "19da9b1b59ecc115fd2df4fc49fbcead.pkl",
+    "28cdcd6860ce08ef8fb0a8e1f164ec3.pkl",
+    "2d8651de506e7d0473e01b5ebahabe8e21.pkl",
+    "57bdc4b2e34c1f649b2652fe2d547f76.pkl",
+    "58fd3eb477a4792ace85b58895cfe906.pkl",
+    "70d37dd1071b6d8d937ae19b1a93404c.pkl"
+]
+
+test_files_ordered = [
+    "0a8073522081f213c00b7aee3044456f.pkl",
+    "0d442b615e2b9a686de265fbebd6c701.pkl",
+    "1a3fce7ac0f4d69fe5b96f86876cfc9d.pkl",
+    "1e742176b5002473d322e4c34b77414.pkl",
+    "2f52f2c6f985e8b430fd3c949b85b353.pkl",
+    "3bfd7d7a0577ead235267d2d6d1ee2ec.pkl",
+    "3c9c6620420b488a531fc48f20c62c9f8.pkl",
+    "4bdbbbf830d368fbbbc9ba4dd3b83655c.pkl",
+    "5a96fff212d2608cdffe1d1b96ebcd65.pkl",
+    "6c073283c9c438e59266a8900a6738.pkl",
+    "6e8e67c3fc41d9e52e536c611b55bb9.pkl",
+    "7e0a6aeb7ada9196558ec0fc9526edf.pkl",
+    "8dedb548af6e0438a4033ba12ad81366.pkl",
+    "8eee21529a2ff6df9718a3c3786d86de.pkl",
+    "9a98a555758d3cc477a7dc0198e0f0ff.pkl",
+    "9a573d817b61de1cb1556d65da6e18ec.pkl",
+    "33b1209022111d36a3aa3d5e7814bc98d.pkl",
+    "34c2a5bb2abdefbef7bc0ffa1eb1c468.pkl",
+    "347f06527a6e42f15dda1a22229d24a8.pkl"
+]
+
+# ===== CARGAR LOS 7 MEJORES PROGRAMAS =====
+programs = []
+with open(ranking_csv_path, newline='', encoding='utf-8') as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        programs.append({
+            "identifier": row["Identifier"],
+            "isla": row["Isla"]
+        })
+        if len(programs) == 7:
+            break
+
+# ===== FUNCIONES AUXILIARES =====
+def get_program_path(identifier, isla):
+    return os.path.join(programs_folder, f"best_program_{identifier}_{isla}_{n_cities_tsp}.py")
+
+def run_program(program_path):
+    from pathlib import Path
+    fname = Path(program_path).name
+    temp_path = Path(program_path).parent / f"temp_{fname}"
+
+    with open(program_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Añadir print(evaluate(0)) al final
+    with open(temp_path, "w", encoding="utf-8") as f:
+        f.write(content.strip() + "\nprint(evaluate(0))\n")
+
+    try:
+        result = subprocess.run(
+            ["python", str(temp_path)],
+            capture_output=True,
+            text=True,
+            timeout=15
+        )
+        output_lines = result.stdout.strip().splitlines()
+        last_line = output_lines[-1] if output_lines else "NO OUTPUT"
+        print("🖨️ Resultado capturado de evaluate(0):", last_line)
+    except Exception as e:
+        last_line = f"ERROR: {str(e)}"
+
+    # Eliminar archivo temporal
+    try:
+        temp_path.unlink()
+    except:
+        pass
+
+    return last_line
+
+# ===== CREAR ARCHIVO CSV DE RESULTADOS =====
+os.makedirs(output_folder, exist_ok=True)
+with open(output_csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(
+        ["File", "identifier", "isla", "distancia LP-ACO", "distancia LLM", "error absoluto", "error relativo"])
+
+    for n_file, test_file in enumerate(test_files_ordered):
+        file_hash = test_file.replace(".pkl", "")
+        print(f"\n📝 Ahora toca el archivo: {file_hash} (n_file={n_file})")
+        input("📌 Cambia el archivo .pkl en los programas y presiona [s] para continuar: ")
+
+        # Solo se pide UNA vez la distancia LP-ACO para este archivo
+        while True:
+            try:
+                distancia_lpac = float(input(f"📏 Ingresa la distancia LP-ACO para el archivo {file_hash}: "))
+                break
+            except ValueError:
+                print("❌ Entrada inválida. Intenta de nuevo.")
+
+        for program in programs:
+            identifier = program["identifier"]
+            isla = program["isla"]
+            program_path = get_program_path(identifier, isla)
+
+            print(f"\n⚙️ Ejecutando programa: best_program_{identifier}_{isla}_{n_cities_tsp}.py")
+            distancia_llm = run_program(program_path)
+
+            if distancia_llm is None:
+                print("⛔ Saltando por error al ejecutar.")
+                continue
+
+            try:
+                distancia_llm_val = float(distancia_llm)
+                error_abs = abs(distancia_llm_val - distancia_lpac)
+                error_rel = error_abs / distancia_lpac if distancia_lpac != 0 else 0.0
+            except ValueError:
+                distancia_llm_val = distancia_llm  # texto completo
+                error_abs = "N/A"
+                error_rel = "N/A"
+
+            writer.writerow([file_hash, identifier, isla, distancia_lpac, distancia_llm_val, error_abs, error_rel])
+            print(f"✅ Guardado resultado para {file_hash} con programa {identifier} (isla {isla})")
+
+print(f"\n🎉 ¡Proceso terminado! Archivo guardado en: {output_csv_path}"). Una vez tenemos estos resultados agrupados por instancia lo que se hace es proceder a sacar estadisticas final te adjunto igual el codigo para que describas lo que se hace import os
+import pandas as pd
+
+# Ruta local con los archivos CSV
+csv_dir = r"C:\Users\valer\Documents\Respaldo\USFQ\MAESTRIA_IA\Tesis\TSP-with-IA\funsearch\funsearch\test_tables_info\test_final_tables"
+
+# Obtener todos los archivos CSV en la carpeta
+csv_files = [f for f in os.listdir(csv_dir) if f.endswith(".csv")]
+
+# Listas para almacenar resultados
+stats_comparativos = []
+victorias_globales = []
+
+for filename in csv_files:
+    file_path = os.path.join(csv_dir, filename)
+    df = pd.read_csv(file_path)
+
+    # Agregar columna de media entre ambas distancias
+    df["media"] = df[["distancia LP-ACO", "distancia LLM"]].mean(axis=1)
+
+    # Crear columna de ganador con empate explícito
+    df["ganador"] = df.apply(
+        lambda row: "Empate" if row["distancia LLM"] == row["distancia LP-ACO"]
+        else "LLM" if row["distancia LLM"] < row["distancia LP-ACO"]
+        else "Evaluador",
+        axis=1
+    )
+
+    # Añadir al resumen de victorias
+    victorias_globales.append(df[[
+        "File", "identifier", "isla", "distancia LP-ACO", "distancia LLM", "media", "ganador"
+    ]])
+
+    # Estadísticas globales del archivo
+    stats = {
+        "archivo": filename,
+        "mean_rel_error": df["error relativo"].mean(),
+        "std_rel_error": df["error relativo"].std(),
+        "max_rel_error": df["error relativo"].max()
+    }
+    stats_comparativos.append(stats)
+
+# Crear DataFrames finales
+comparativos_df = pd.DataFrame(stats_comparativos)
+victorias_df = pd.concat(victorias_globales, ignore_index=True)
+
+# Conteo de victorias por identifier (incluye Empates)
+conteo_victorias = victorias_df.groupby(["identifier", "ganador"]).size().unstack(fill_value=0).reset_index()
+
+# Calcular medias separadas por identifier
+media_por_identifier = victorias_df.groupby("identifier")[["distancia LP-ACO", "distancia LLM"]].mean().reset_index()
+media_por_identifier.rename(columns={
+    "distancia LP-ACO": "media_LP_ACO",
+    "distancia LLM": "media_LLM"
+}, inplace=True)
+
+
+# Exportar resultados
+comparativos_df.to_csv("resumen_comparativo.csv", index=False)
+victorias_df.to_csv("victorias_detalle.csv", index=False)
+conteo_victorias.to_csv("conteo_victorias_por_identifier.csv", index=False)
+media_por_identifier.to_csv("media_por_identifier.csv", index=False)
+
+
+
+# Mostrar resumen
+print("Resumen general por archivo:")
+print(comparativos_df)
+
+print("\nEjemplo de resultados de victorias:")
+print(victorias_df.head())
+
+print("\nConteo de victorias por identifier:")
+print(conteo_victorias)
+finalmente, se pueden obtener estos resultados archivo,mean_rel_error,std_rel_error,max_rel_error
+test_table_100.csv,0.19998116780138256,0.07061977117067454,0.4076534766347138
+test_table_20.csv,0.1707798479669014,0.10205709892988299,0.4809541080105287
+test_table_50.csv,0.1950588259458921,0.07090102949193311,0.3291197859632785
+que corresponde al resumen comparativo y esta otra que corresponde a las victorias File,identifier,isla,distancia LP-ACO,distancia LLM,media,ganador
+0a8073522081f213c00b7aee3044456f.py,1746499826,2,15.378065,16.378334371137388,15.878199685568694,Evaluador
+0a8073522081f213c00b7aee3044456f.py,1746490919,0,15.378065,18.702928758136903,17.04049687906845,Evaluador
+0a8073522081f213c00b7aee3044456f.py,1746490919,0,15.378065,18.702928758136903,17.04049687906845,Evaluador
+0a8073522081f213c00b7aee3044456f.py,1746494622,0,15.378065,16.362045015590105,15.870055007795052,Evaluador
+0a8073522081f213c00b7aee3044456f.py,1746499826,2,15.378065,16.73514556266526,16.05660528133263,Evaluador
+0a8073522081f213c00b7aee3044456f.py,1746496504,2,15.378065,17.424252933964237,16.401158966982116,Evaluador
+0a8073522081f213c00b7aee3044456f.py,1746492541,2,15.378065,17.242947310842062,16.31050615542103,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746499826,2,16.624784,19.76976812422613,18.197276062113062,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746490919,0,16.624784,20.128946810475792,18.376865405237893,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746490919,0,16.624784,20.128946810475792,18.376865405237893,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746494622,0,16.624784,19.30438630655319,17.964585153276595,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746499826,2,16.624784,19.547000152332075,18.085892076166036,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746496504,2,16.624784,19.418483382777858,18.021633691388928,Evaluador
+0d442b615e2b9a686de265fbebd6c701.py,1746492541,2,16.624784,19.58647227638329,18.105628138191644,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746499826,2,15.540755,18.49641768307833,17.018586341539166,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746490919,0,15.540755,18.76002520278332,17.15039010139166,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746490919,0,15.540755,18.76002520278332,17.15039010139166,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746494622,0,15.540755,17.95914381130674,16.749949405653368,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746499826,2,15.540755,18.77754211595677,17.159148557978384,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746496504,2,15.540755,18.125367304595848,16.833061152297923,Evaluador
+1a3fce7ac0f4d69fe5b96f86876cfc9d.py,1746492541,2,15.540755,18.300275511817976,16.920515255908988,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746499826,2,15.835269,18.76175326594008,17.29851113297004,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746490919,0,15.835269,17.730423461821168,16.782846230910586,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746490919,0,15.835269,17.730423461821168,16.782846230910586,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746494622,0,15.835269,19.33243031643057,17.583849658215286,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746499826,2,15.835269,19.68337105827964,17.759320029139822,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746496504,2,15.835269,19.510283549002285,17.672776274501143,Evaluador
+1e742176b5002473d322e4c34b77414.py,1746492541,2,15.835269,19.97990055344581,17.907584776722906,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746499826,2,15.914437,19.29097766179454,17.602707330897267,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746490919,0,15.914437,19.716865773073653,17.81565138653683,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746490919,0,15.914437,19.716865773073653,17.81565138653683,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746494622,0,15.914437,20.22446850000789,18.069452750003947,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746499826,2,15.914437,19.430697412343587,17.67256720617179,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746496504,2,15.914437,18.24217694553096,17.078306972765482,Evaluador
+2f52f2c6f985e8b430fd3c949b85b353.py,1746492541,2,15.914437,19.295889310019135,17.605163155009567,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746499826,2,16.366809,21.573803095491726,18.970306047745865,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746490919,0,16.366809,21.238915583245603,18.8028622916228,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746490919,0,16.366809,21.238915583245603,18.8028622916228,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746494622,0,16.366809,20.411585837967607,18.389197418983805,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746499826,2,16.366809,21.62331709716614,18.99506304858307,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746496504,2,16.366809,21.62331709716614,18.99506304858307,Evaluador
+3bfd7d7a0577ead235267d2d6d1ee2ec.py,1746492541,2,16.366809,19.37378714159144,17.87029807079572,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746499826,2,15.275821,16.643727613196475,15.959774306598238,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746490919,0,15.275821,18.91187972331236,17.09385036165618,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746490919,0,15.275821,18.91187972331236,17.09385036165618,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746494622,0,15.275821,19.64966047428868,17.46274073714434,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746499826,2,15.275821,19.882527974348484,17.579174487174242,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746496504,2,15.275821,18.396247907575408,16.836034453787704,Evaluador
+3c9c6620420b488a531fc48f20c62c9f8.py,1746492541,2,15.275821,16.31213549547629,15.793978247738146,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746499826,2,15.436385,19.78279118264115,17.609588091320575,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746490919,0,15.436385,20.081027520641197,17.758706260320597,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746490919,0,15.436385,20.081027520641197,17.758706260320597,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746494622,0,15.436385,19.657487083676227,17.546936041838112,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746499826,2,15.436385,20.717589762480294,18.076987381240148,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746496504,2,15.436385,19.201911044978008,17.319148022489003,Evaluador
+4bdbbbf830d368fbbbc9ba4dd3b83655c.py,1746492541,2,15.436385,20.687103161150787,18.061744080575394,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746499826,2,16.49814,19.665696936201385,18.081918468100692,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746490919,0,16.49814,18.55114680646108,17.52464340323054,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746490919,0,16.49814,18.55114680646108,17.52464340323054,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746494622,0,16.49814,19.284163614358675,17.891151807179337,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746499826,2,16.49814,19.194214290406748,17.846177145203374,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746496504,2,16.49814,19.282520762395016,17.890330381197508,Evaluador
+5a96fff212d2608cdffe1d1b96ebcd65.py,1746492541,2,16.49814,18.202018716367117,17.350079358183557,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746499826,2,17.15939,20.50044341144141,18.829916705720706,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746490919,0,17.15939,21.02477114565493,19.092080572827463,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746490919,0,17.15939,21.02477114565493,19.092080572827463,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746494622,0,17.15939,19.487296976666588,18.323343488333293,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746499826,2,17.15939,20.383912958163528,18.77165147908176,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746496504,2,17.15939,22.178844915391952,19.669117457695975,Evaluador
+6c073283c9c438e59266a8900a6738.py,1746492541,2,17.15939,21.000328842696103,19.07985942134805,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746499826,2,16.211506,17.627018715368624,16.91926235768431,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746490919,0,16.211506,19.01350645527608,17.61250622763804,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746490919,0,16.211506,19.01350645527608,17.61250622763804,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746494622,0,16.211506,19.29544995440086,17.75347797720043,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746499826,2,16.211506,17.270537222940714,16.74102161147036,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746496504,2,16.211506,18.817724849395688,17.514615424697844,Evaluador
+6e8e67c3fc41d9e52e536c611b55bb9.py,1746492541,2,16.211506,19.20394224177866,17.70772412088933,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746499826,2,16.936034,19.633880359748613,18.284957179874304,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746490919,0,16.936034,19.758931481718736,18.34748274085937,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746490919,0,16.936034,19.758931481718736,18.34748274085937,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746494622,0,16.936034,19.47816826616797,18.207101133083984,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746499826,2,16.936034,19.412991254665148,18.174512627332575,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746496504,2,16.936034,19.47816826616797,18.207101133083984,Evaluador
+7e0a6aeb7ada9196558ec0fc9526edf.py,1746492541,2,16.936034,20.345042609933504,18.640538304966753,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746499826,2,16.36232,19.344116180865385,17.85321809043269,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746490919,0,16.36232,20.14926033186031,18.255790165930158,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746490919,0,16.36232,20.14926033186031,18.255790165930158,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746494622,0,16.36232,20.46918191442101,18.415750957210506,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746499826,2,16.36232,18.778151889169383,17.57023594458469,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746496504,2,16.36232,20.27168987356916,18.317004936784578,Evaluador
+8dedb548af6e0438a4033ba12ad81366.py,1746492541,2,16.36232,20.182285598524164,18.272302799262082,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746499826,2,16.145603,19.318144734816915,17.73187386740846,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746490919,0,16.145603,20.82878502558149,18.487194012790745,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746490919,0,16.145603,20.82878502558149,18.487194012790745,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746494622,0,16.145603,19.14164642421493,17.643624712107467,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746499826,2,16.145603,20.854455192105345,18.50002909605267,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746496504,2,16.145603,19.2776941808284,17.7116485904142,Evaluador
+8eee21529a2ff6df9718a3c3786d86de.py,1746492541,2,16.145603,19.547731899607903,17.846667449803952,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746499826,2,15.825063,17.645332050163333,16.735197525081666,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746490919,0,15.825063,18.102826460853613,16.963944730426807,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746490919,0,15.825063,18.102826460853613,16.963944730426807,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746494622,0,15.825063,18.45533829364352,17.14020064682176,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746499826,2,15.825063,17.617757569826235,16.72141028491312,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746496504,2,15.825063,17.275897723920746,16.550480361960375,Evaluador
+9a98a555758d3cc477a7dc0198e0f0ff.py,1746492541,2,15.825063,18.041546781228533,16.933304890614266,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746499826,2,16.335946,21.45359354453286,18.89476977226643,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746490919,0,16.335946,19.5869502910907,17.96144814554535,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746490919,0,16.335946,19.5869502910907,17.96144814554535,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746494622,0,16.335946,22.995351181016947,19.665648590508475,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746499826,2,16.335946,21.157604078464285,18.74677503923214,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746496504,2,16.335946,20.831214326789443,18.58358016339472,Evaluador
+9a573d817b61de1cb1556d65da6e18ec.py,1746492541,2,16.335946,21.27937522586467,18.807660612932334,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746499826,2,16.606554,20.312807110895008,18.459680555447505,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746490919,0,16.606554,20.96429250220455,18.785423251102273,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746490919,0,16.606554,20.96429250220455,18.785423251102273,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746494622,0,16.606554,20.654542592150158,18.630548296075077,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746499826,2,16.606554,18.723945084984983,17.66524954249249,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746496504,2,16.606554,19.83401574029344,18.22028487014672,Evaluador
+33b1209022111d36a3aa3d5e7814bc98d.py,1746492541,2,16.606554,21.306405592622504,18.95647979631125,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746499826,2,16.498255,17.64600418587476,17.07212959293738,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746490919,0,16.498255,19.652623566725392,18.075439283362698,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746490919,0,16.498255,19.652623566725392,18.075439283362698,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746494622,0,16.498255,20.33317535251065,18.415715176255326,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746499826,2,16.498255,18.402820520218317,17.450537760109157,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746496504,2,16.498255,17.647731642787225,17.07299332139361,Evaluador
+34c2a5bb2abdefbef7bc0ffa1eb1c468.py,1746492541,2,16.498255,18.51698144943529,17.507618224717646,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746499826,2,15.688682,18.649702381958708,17.169192190979352,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746490919,0,15.688682,17.623789314444288,16.656235657222144,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746490919,0,15.688682,17.623789314444288,16.656235657222144,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746494622,0,15.688682,18.125444132834577,16.907063066417287,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746499826,2,15.688682,21.74450079019861,18.716591395099307,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746496504,2,15.688682,19.14926798646861,17.418974993234308,Evaluador
+347f06527a6e42f15dda1a22229d24a8.py,1746492541,2,15.688682,17.232912723370656,16.46079736168533,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746499826,2,7.009738,8.993430254592866,8.001584127296432,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746490919,0,7.009738,8.155834087456101,7.582786043728051,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746490919,0,7.009738,8.155834087456101,7.582786043728051,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746494622,0,7.009738,7.408709879456329,7.209223939728164,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746499826,2,7.009738,7.931732060668763,7.470735030334382,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746496504,2,7.009738,7.938164911842593,7.473951455921297,Evaluador
+7f3a8f71792f79292bb99b9f8e0905eb,1746492541,2,7.009738,7.032191251385066,7.020964625692533,Evaluador
+64be19dddec122f8ef541ee1d2766847,1746499826,2,7.1264,8.225416728750462,7.675908364375231,Evaluador
+64be19dddec122f8ef541ee1d2766847,1746490919,0,7.1264,7.911620367888151,7.519010183944076,Evaluador
+64be19dddec122f8ef541ee1d2766847,1746490919,0,7.1264,7.911620367888151,7.519010183944076,Evaluador
+64be19dddec122f8ef541ee1d2766847,1746494622,0,7.1264,9.789465964798948,8.457932982399473,Evaluador
+64be19dddec122f8ef541ee1d2766847,1746499826,2,7.1264,7.114421575665496,7.120410787832748,LLM
+64be19dddec122f8ef541ee1d2766847,1746496504,2,7.1264,8.15666777473501,7.641533887367505,Evaluador
+64be19dddec122f8ef541ee1d2766847,1746492541,2,7.1264,9.75740695274117,8.441903476370586,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746499826,2,6.71249,8.079230530735071,7.395860265367535,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746490919,0,6.71249,7.804017830443547,7.258253915221774,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746490919,0,6.71249,7.804017830443547,7.258253915221774,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746494622,0,6.71249,8.397277198026366,7.554883599013182,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746499826,2,6.71249,7.158308906201153,6.935399453100576,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746496504,2,6.71249,7.158308906201153,6.935399453100576,Evaluador
+78e16ce0359765bfa0552e66218551cf,1746492541,2,6.71249,8.079230530735071,7.395860265367535,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746499826,2,7.254322,10.743317966731157,8.998819983365578,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746490919,0,7.254322,10.000965729664811,8.627643864832406,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746490919,0,7.254322,10.000965729664811,8.627643864832406,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746494622,0,7.254322,8.655265595087357,7.954793797543679,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746499826,2,7.254322,8.969078434578599,8.1117002172893,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746496504,2,7.254322,9.328676923980629,8.291499461990314,Evaluador
+385a1bf6f35a6c27a9c25cad40c4df3b,1746492541,2,7.254322,9.624012190568076,8.439167095284038,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746499826,2,8.264046,10.3150275058716,9.289536752935799,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746490919,0,8.264046,9.09286421505103,8.678455107525515,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746490919,0,8.264046,9.09286421505103,8.678455107525515,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746494622,0,8.264046,10.326919179707,9.2954825898535,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746499826,2,8.264046,10.87508404613177,9.569565023065884,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746496504,2,8.264046,8.874802032474205,8.569424016237104,Evaluador
+9517ac29c9980fad9e914ee282ef6bf9,1746492541,2,8.264046,10.25073777790933,9.257391888954665,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746499826,2,7.77795,10.100176285538817,8.939063142769408,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746490919,0,7.77795,9.93307050300202,8.85551025150101,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746490919,0,7.77795,9.93307050300202,8.85551025150101,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746494622,0,7.77795,9.721709433389137,8.749829716694569,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746499826,2,7.77795,9.721709433389137,8.749829716694569,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746496504,2,7.77795,9.519875583564133,8.648912791782067,Evaluador
+66975d1a9599c26cff761d8a1c9468c9,1746492541,2,7.77795,10.100176285538817,8.939063142769408,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746499826,2,5.936868,7.119953401742468,6.528410700871234,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746490919,0,5.936868,6.653533861271425,6.295200930635712,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746490919,0,5.936868,6.653533861271425,6.295200930635712,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746494622,0,5.936868,6.653533861271426,6.295200930635713,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746499826,2,5.936868,6.029792243433198,5.983330121716598,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746496504,2,5.936868,6.653533861271425,6.295200930635712,Evaluador
+75124e736e33ebec9fed5f8d3079726e,1746492541,2,5.936868,7.119953401742468,6.528410700871234,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746499826,2,7.627215,8.582687065971,8.1049510329855,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746490919,0,7.627215,9.220041295721726,8.423628147860864,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746490919,0,7.627215,9.220041295721726,8.423628147860864,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746494622,0,7.627215,8.18887274250398,7.90804387125199,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746499826,2,7.627215,8.173250252309334,7.900232626154667,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746496504,2,7.627215,8.441298826442532,8.034256913221267,Evaluador
+391509beb2a823fbc17babf1eb32a23c,1746492541,2,7.627215,9.191905194480604,8.409560097240302,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746499826,2,7.810754,8.406325191298063,8.108539595649031,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746490919,0,7.810754,8.759287238642008,8.285020619321005,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746490919,0,7.810754,8.759287238642008,8.285020619321005,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746494622,0,7.810754,7.859393593793021,7.835073796896511,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746499826,2,7.810754,7.81449069072045,7.812622345360225,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746496504,2,7.810754,7.814490690720451,7.812622345360225,Evaluador
+280854846b3f43a38f7fcdd2fd7ba335,1746492541,2,7.810754,9.151736962564543,8.481245481282272,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746499826,2,7.21101,8.162230860024223,7.686620430012112,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746490919,0,7.21101,7.531504056313091,7.3712570281565455,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746490919,0,7.21101,7.531504056313091,7.3712570281565455,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746494622,0,7.21101,7.35352082328166,7.2822654116408305,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746499826,2,7.21101,8.035501240547589,7.623255620273794,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746496504,2,7.21101,7.35352082328166,7.2822654116408305,Evaluador
+aad8773c3e6b08efdaaabfdcbc0d0569,1746492541,2,7.21101,7.958636594322156,7.584823297161078,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746499826,2,7.254086,9.033474962462613,8.143780481231307,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746490919,0,7.254086,7.627072758826893,7.440579379413446,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746490919,0,7.254086,7.627072758826893,7.440579379413446,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746494622,0,7.254086,9.033474962462613,8.143780481231307,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746499826,2,7.254086,7.459840532412475,7.356963266206238,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746496504,2,7.254086,9.189771275153063,8.221928637576532,Evaluador
+ab9c8fbdbfc61cca6a538dec8e99922a,1746492541,2,7.254086,9.033474962462613,8.143780481231307,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746499826,2,7.914056,9.24656775359096,8.58031187679548,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746490919,0,7.914056,9.472818286913904,8.693437143456952,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746490919,0,7.914056,9.472818286913904,8.693437143456952,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746494622,0,7.914056,9.43784670109683,8.675951350548416,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746499826,2,7.914056,9.43784670109683,8.675951350548416,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746496504,2,7.914056,9.472818286913904,8.693437143456952,Evaluador
+b6bb0fa521c532065da8243023bffc48,1746492541,2,7.914056,8.701346212505992,8.307701106252996,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746499826,2,6.76027,9.48642741235316,8.12334870617658,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746490919,0,6.76027,8.138789802861565,7.4495299014307825,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746490919,0,6.76027,8.138789802861565,7.4495299014307825,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746494622,0,6.76027,7.288498665532698,7.024384332766349,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746499826,2,6.76027,8.337356763655187,7.5488133818275935,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746496504,2,6.76027,9.433399789770617,8.096834894885308,Evaluador
+c4fb118f4f99c798f844aedf32006b06,1746492541,2,6.76027,8.046934035575942,7.403602017787971,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746499826,2,8.638581,10.209348297562332,9.423964648781165,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746490919,0,8.638581,9.412748936108224,9.025664968054112,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746490919,0,8.638581,9.412748936108224,9.025664968054112,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746494622,0,8.638581,10.337254696726305,9.487917848363153,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746499826,2,8.638581,10.78226876270866,9.710424881354331,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746496504,2,8.638581,11.611079639354978,10.12483031967749,Evaluador
+c9735d8041b4c52c8c9a8ca7225ab56b,1746492541,2,8.638581,10.78226876270866,9.710424881354331,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746499826,2,7.177039,8.967377125350133,8.072208062675067,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746490919,0,7.177039,7.185246653052806,7.181142826526402,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746490919,0,7.177039,7.185246653052806,7.181142826526402,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746494622,0,7.177039,8.147276488361975,7.662157744180988,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746499826,2,7.177039,8.147276488361975,7.662157744180988,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746496504,2,7.177039,8.254546179279192,7.715792589639596,Evaluador
+d5ad73b02e658b7e7ea8bdeff94afe4c,1746492541,2,7.177039,8.967377125350133,8.072208062675067,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746499826,2,7.430698,9.663764188400544,8.54723109420027,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746490919,0,7.430698,7.671890884887476,7.551294442443737,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746490919,0,7.430698,7.671890884887476,7.551294442443737,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746494622,0,7.430698,7.889330721947505,7.6600143609737525,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746499826,2,7.430698,7.889330721947504,7.660014360973752,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746496504,2,7.430698,9.808946725874868,8.619822362937434,Evaluador
+d86936d09e79a2aba5a7c6d725d8370a,1746492541,2,7.430698,9.017528496319272,8.224113248159636,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746499826,2,7.846007,10.078342161586788,8.962174580793395,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746490919,0,7.846007,9.47711444301446,8.661560721507229,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746490919,0,7.846007,9.47711444301446,8.661560721507229,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746494622,0,7.846007,8.10837670450772,7.97719185225386,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746499826,2,7.846007,9.990732858262293,8.918369929131146,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746496504,2,7.846007,9.646816336688453,8.746411668344226,Evaluador
+db8b501b0568b733211dcf2f1698c286,1746492541,2,7.846007,10.078342161586788,8.962174580793395,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746499826,2,9.527071,10.953375257558267,10.240223128779133,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746490919,0,9.527071,11.186729270682582,10.356900135341292,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746490919,0,9.527071,11.186729270682582,10.356900135341292,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746494622,0,9.527071,12.291535826331325,10.909303413165663,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746499826,2,9.527071,10.405035418576398,9.966053209288198,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746496504,2,9.527071,12.291535826331325,10.909303413165663,Evaluador
+f7bf6db8397a5ca45b92061847fac3af,1746492541,2,9.527071,12.291535826331325,10.909303413165663,Evaluador
+f21d554720c169954571530e170582d6,1746499826,2,8.222199,8.904580944725,8.5633899723625,Evaluador
+f21d554720c169954571530e170582d6,1746490919,0,8.222199,8.798200689384425,8.510199844692213,Evaluador
+f21d554720c169954571530e170582d6,1746490919,0,8.222199,8.798200689384425,8.510199844692213,Evaluador
+f21d554720c169954571530e170582d6,1746494622,0,8.222199,8.925308874734478,8.57375393736724,Evaluador
+f21d554720c169954571530e170582d6,1746499826,2,8.222199,8.74749834897959,8.484848674489795,Evaluador
+f21d554720c169954571530e170582d6,1746496504,2,8.222199,10.244151504296882,9.233175252148442,Evaluador
+f21d554720c169954571530e170582d6,1746492541,2,8.222199,8.865067330620521,8.543633165310261,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746499826,2,7.388338,8.853885127099826,8.121111563549913,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746490919,0,7.388338,8.006934596832451,7.697636298416226,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746490919,0,7.388338,8.006934596832451,7.697636298416226,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746494622,0,7.388338,8.19216700454322,7.79025250227161,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746499826,2,7.388338,8.796061844699041,8.09219992234952,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746496504,2,7.388338,9.490800728513255,8.439569364256627,Evaluador
+f71c627ecbe6fcb050a7f3399a2bbacf,1746492541,2,7.388338,8.72645507355031,8.057396536775155,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746499826,2,12.310413,16.034176394318866,14.172294697159433,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746490919,0,12.310413,14.586805925690662,13.448609462845331,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746490919,0,12.310413,14.586805925690662,13.448609462845331,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746494622,0,12.310413,15.94612576837859,14.128269384189295,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746499826,2,12.310413,15.913316563526807,14.111864781763405,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746496504,2,12.310413,14.581670081332405,13.446041540666203,Evaluador
+00b10c906510e9f3bdef6e7fcbd9fd5f.py,1746492541,2,12.310413,15.386824003053292,13.848618501526646,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746499826,2,12.368695,16.229968423455496,14.29933171172775,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746490919,0,12.368695,16.221317370430857,14.295006185215428,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746490919,0,12.368695,16.221317370430857,14.295006185215428,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746494622,0,12.368695,14.701989302979364,13.535342151489683,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746499826,2,12.368695,15.271352755788682,13.820023877894341,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746496504,2,12.368695,16.13540911268593,14.252052056342965,Evaluador
+0ac59d661efa7b188c878bb7e8847625.py,1746492541,2,12.368695,16.030862673501392,14.199778836750696,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746499826,2,12.20946,13.52957481295852,12.869517406479261,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746490919,0,12.20946,15.742317629076796,13.975888814538397,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746490919,0,12.20946,15.742317629076796,13.975888814538397,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746494622,0,12.20946,15.672116119250116,13.940788059625058,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746499826,2,12.20946,13.52957481295852,12.869517406479261,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746496504,2,12.20946,13.755537137703293,12.982498568851646,Evaluador
+0e744ed83055331dc26b892c03cbdf5f.py,1746492541,2,12.20946,13.695011303941216,12.952235651970607,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746499826,2,12.090835,14.842192251873294,13.466513625936647,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746490919,0,12.090835,15.160715101721602,13.6257750508608,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746490919,0,12.090835,15.160715101721602,13.6257750508608,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746494622,0,12.090835,14.115204831377865,13.103019915688932,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746499826,2,12.090835,15.234436030672704,13.662635515336351,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746496504,2,12.090835,15.234436030672704,13.662635515336351,Evaluador
+2e36071082e32aa21697d42e5fb19e05.py,1746492541,2,12.090835,14.223359374575413,13.157097187287707,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746499826,2,11.232365,12.95346518490011,12.092915092450056,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746490919,0,11.232365,13.96708267296644,12.59972383648322,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746490919,0,11.232365,13.96708267296644,12.59972383648322,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746494622,0,11.232365,13.3779414065316,12.3051532032658,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746499826,2,11.232365,13.970698570858929,12.601531785429465,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746496504,2,11.232365,13.153963169717953,12.193164084858976,Evaluador
+5a8d8658a88a423a0c87a9a0dec3ffd.py,1746492541,2,11.232365,13.817770422480397,12.525067711240197,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746499826,2,10.943642,13.265501077370002,12.104571538685,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746490919,0,10.943642,13.543357017051164,12.243499508525582,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746490919,0,10.943642,13.543357017051164,12.243499508525582,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746494622,0,10.943642,12.437852115092891,11.690747057546446,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746499826,2,10.943642,13.403039685960122,12.17334084298006,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746496504,2,10.943642,13.964203518869413,12.453922759434708,Evaluador
+5a6284013ce12a4d625d5bd3e3c8acdc.py,1746492541,2,10.943642,13.384075399879396,12.163858699939698,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746499826,2,11.755257,13.424432498506617,12.58984474925331,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746490919,0,11.755257,13.716024093455928,12.735640546727964,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746490919,0,11.755257,13.716024093455928,12.735640546727964,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746494622,0,11.755257,13.886254218548505,12.820755609274253,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746499826,2,11.755257,13.828102053632133,12.791679526816067,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746496504,2,11.755257,12.989114331370178,12.37218566568509,Evaluador
+5e9209f502dec9e5e595f14a7a453f0.py,1746492541,2,11.755257,13.50073260213026,12.62799480106513,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746499826,2,11.564428,14.39077073236171,12.977599366180854,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746490919,0,11.564428,11.732357681638966,11.648392840819483,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746490919,0,11.564428,11.732357681638966,11.648392840819483,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746494622,0,11.564428,14.104946694651597,12.834687347325797,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746499826,2,11.564428,12.204444364865976,11.884436182432989,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746496504,2,11.564428,12.147544284171904,11.855986142085952,Evaluador
+6aacc4fde8a1eb30a95652165fa65738.py,1746492541,2,11.564428,14.81632615858059,13.190377079290295,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746499826,2,11.142872,13.231740983812804,12.187306491906401,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746490919,0,11.142872,12.474924278368658,11.808898139184329,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746490919,0,11.142872,12.474924278368658,11.808898139184329,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746494622,0,11.142872,14.029120131649693,12.585996065824848,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746499826,2,11.142872,13.224835761930144,12.183853880965072,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746496504,2,11.142872,13.222867675173603,12.182869837586802,Evaluador
+6d38cc5ac18a4ea9a1d9fd319a18fb261.py,1746492541,2,11.142872,12.682731060428416,11.912801530214209,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746499826,2,11.810708,13.539562243883672,12.675135121941835,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746490919,0,11.810708,14.261957474436308,13.036332737218153,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746490919,0,11.810708,14.261957474436308,13.036332737218153,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746494622,0,11.810708,13.411429004174211,12.611068502087106,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746499826,2,11.810708,14.279932921017954,13.045320460508977,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746496504,2,11.810708,13.884948584273724,12.847828292136862,Evaluador
+8cd5fcef37430a1ba42617db9222de2b.py,1746492541,2,11.810708,14.488350231388232,13.149529115694115,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746499826,2,12.485429,14.33311036331955,13.409269681659776,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746490919,0,12.485429,13.863036835499583,13.17423291774979,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746490919,0,12.485429,13.863036835499583,13.17423291774979,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746494622,0,12.485429,16.21435044936193,14.349889724680965,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746499826,2,12.485429,14.662930433196005,13.574179716598003,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746496504,2,12.485429,13.941436908760236,13.213432954380117,Evaluador
+8e8b2ef72a623a0bd9dc842a3b9b3d.py,1746492541,2,12.485429,14.006576679764702,13.246002839882351,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746499826,2,10.498073,12.610406079479963,11.554239539739982,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746490919,0,10.498073,13.483376445109476,11.990724722554738,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746490919,0,10.498073,13.483376445109476,11.990724722554738,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746494622,0,10.498073,13.572941558257872,12.035507279128936,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746499826,2,10.498073,12.948573161285903,11.723323080642952,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746496504,2,10.498073,12.591064254866318,11.544568627433158,Evaluador
+009a78e2ea8bbb33a6dc831459460268.py,1746492541,2,10.498073,13.252070195444928,11.875071597722464,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746499826,2,11.913834,13.952327993364811,12.933080996682406,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746490919,0,11.913834,13.833703966361856,12.873768983180927,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746490919,0,11.913834,13.833703966361856,12.873768983180927,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746494622,0,11.913834,14.382224895027113,13.148029447513556,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746499826,2,11.913834,13.374936489076624,12.644385244538313,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746496504,2,11.913834,13.373541869256265,12.643687934628133,Evaluador
+09e5c0155b7d12a82437296f53dd82dd.py,1746492541,2,11.913834,14.296835458058474,13.105334729029238,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746499826,2,11.553592,13.57762348354523,12.565607741772615,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746490919,0,11.553592,14.379050746785657,12.966321373392828,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746490919,0,11.553592,14.379050746785657,12.966321373392828,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746494622,0,11.553592,13.726347477649696,12.639969738824849,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746499826,2,11.553592,11.95175140881625,11.752671704408126,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746496504,2,11.553592,12.570451765743805,12.062021882871903,Evaluador
+9b1298116b10c81ac1cc7d3fcde31aa6.py,1746492541,2,11.553592,13.5137991669009,12.53369558345045,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746499826,2,11.810669,14.195991283886476,13.003330141943238,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746490919,0,11.810669,13.602656495889851,12.706662747944925,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746490919,0,11.810669,13.602656495889851,12.706662747944925,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746494622,0,11.810669,13.862671005056994,12.836670002528496,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746499826,2,11.810669,14.195991283886476,13.003330141943238,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746496504,2,11.810669,14.64401342676542,13.227341213382712,Evaluador
+19da9b1b59ecc115fd2df4fc49fbcead.py,1746492541,2,11.810669,13.875042584290773,12.842855792145386,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746499826,2,11.183652,12.008588965871215,11.596120482935607,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746490919,0,11.183652,12.008588965871215,11.596120482935607,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746490919,0,11.183652,12.008588965871215,11.596120482935607,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746494622,0,11.183652,12.095137996332554,11.639394998166278,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746499826,2,11.183652,12.938829066898307,12.061240533449155,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746496504,2,11.183652,12.62302591851815,11.903338959259075,Evaluador
+28cdcd6860ce08ef8fb0a8e1f164ec3.py,1746492541,2,11.183652,12.969253157126415,12.076452578563208,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746499826,2,11.160556,13.966333980331116,12.563444990165557,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746490919,0,11.160556,13.742309370906195,12.451432685453097,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746490919,0,11.160556,13.742309370906195,12.451432685453097,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746494622,0,11.160556,13.17762066540596,12.16908833270298,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746499826,2,11.160556,13.200589254842985,12.180572627421492,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746496504,2,11.160556,13.745713620947123,12.45313481047356,Evaluador
+2d8651de506e7d0473e01b5ebahabe8e21.py,1746492541,2,11.160556,13.17762066540596,12.16908833270298,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746499826,2,11.29927,14.354711389414042,12.826990694707021,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746490919,0,11.29927,13.58588500051395,12.442577500256975,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746490919,0,11.29927,13.58588500051395,12.442577500256975,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746494622,0,11.29927,14.003749838518724,12.651509919259361,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746499826,2,11.29927,12.654514725302816,11.976892362651409,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746496504,2,11.29927,12.829822404967064,12.064546202483532,Evaluador
+57bdc4b2e34c1f649b2652fe2d547f76.py,1746492541,2,11.29927,13.984119297587602,12.641694648793802,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746499826,2,11.748072,15.547951113069754,13.648011556534877,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746490919,0,11.748072,15.598802355142448,13.673437177571223,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746490919,0,11.748072,15.598802355142448,13.673437177571223,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746494622,0,11.748072,12.74893581544637,12.248503907723185,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746499826,2,11.748072,13.004088968247556,12.37608048412378,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746496504,2,11.748072,14.516763989184764,13.132417994592382,Evaluador
+58fd3eb477a4792ace85b58895cfe906.py,1746492541,2,11.748072,15.614594942121188,13.681333471060594,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746499826,2,11.701035,13.044452459489774,12.372743729744887,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746490919,0,11.701035,13.57159811417162,12.63631655708581,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746490919,0,11.701035,13.57159811417162,12.63631655708581,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746494622,0,11.701035,14.8035055442154,13.2522702721077,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746499826,2,11.701035,13.926500792389604,12.8137678961948,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746496504,2,11.701035,14.179407130041458,12.94022106502073,Evaluador
+70d37dd1071b6d8d937ae19b1a93404c.py,1746492541,2,11.701035,15.502333484977042,13.60168424248852,Evaluador.

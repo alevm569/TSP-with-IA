@@ -59,10 +59,10 @@ class Config:
     """
     programs_database: ProgramsDatabaseConfig = dataclasses.field(
         default_factory=ProgramsDatabaseConfig)
-    num_samplers: int = 5
+    num_samplers: int = 10
     num_evaluators: int = 20
     samples_per_prompt: int = 4
-    serverIP: str = 'localhost'  # 172.21.230.21
+    serverIP: str = '172.21.230.10'  # 172.21.230.21
     api_endpoint: str = f"http://{serverIP}:11434/api/generate"
     # model_name: str = "deepseek-coder:6.7b"
     model_name: str = "codegemma:latest"

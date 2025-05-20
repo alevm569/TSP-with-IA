@@ -130,7 +130,7 @@ class ProgramsDatabase:
     for key in data.keys():
       setattr(self, key, data[key])
 
-  def backup(self, island_id, best_program=False):
+  def backup(self, island_id, best_program=False, program=None) :
     if best_program:
       p = pathlib.Path(self._config.folder_best_programs)
       filename = f"best_program_{self.identifier}_{island_id}_{n_cities_graph}.py"
@@ -143,9 +143,13 @@ class ProgramsDatabase:
     filepath = p / filename
     logging.info(f"Saving backup to {filepath}.")
 
-    with open(filepath, mode="wb") as f:
-      self.save(f)
-    self._backups_done += 1
+    if best_program:
+      with open(filepath, "w+") as f:
+        f.write(program)
+    else:
+      with open(filepath, mode="wb") as f:
+        self.save(f)
+      self._backups_done += 1
 
   def get_prompt(self) -> Prompt:
     """Returns a prompt containing implementations from one chosen island."""
@@ -325,8 +329,7 @@ class Island:
     # Replace functions in the template with the list constructed here.
     prompt_program = dataclasses.replace(self._template, functions=versioned_functions)
     eval_function = self._template.get_function('evaluate')
-    # TODO: Vale function distance should be outside
-    # distance_function = self._template.get_function('calculate_route_distance')
+
     prompt_program = dataclasses.replace(prompt_program, functions=[eval_function] + versioned_functions)
     return str(prompt_program)
 

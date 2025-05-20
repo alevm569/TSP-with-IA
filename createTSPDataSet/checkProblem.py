@@ -6,19 +6,18 @@ from sklearn.manifold import MDS
 from TSP import report_time
 from TSPSolution import TSPSource
 from TSP_LP.TSP_LP_Generate import generate_solution_with_heuristics, get_edges_from_solution, get_solution_with_lp
+import matplotlib
+matplotlib.use('Agg')
+
 from utils.constants import Heuristics
 from utils.plotUtil import plot_route
+from funsearch.examples.util import read_distance_matrix
 
 show_plot = True
 show_name = True
-matrix_distances = np.array([
-    [0, 10, 15, 20],
-    [10, 0, 35, 25],
-    [15, 35, 0, 30],
-    [20, 25, 30, 0],
-])
 
-# from distance create cities as  Cities = dict[str, tuple[float, float]]
+matrix_distances = read_distance_matrix()
+
 # Crear el modelo MDS
 mds = MDS(n_components=2, dissimilarity='precomputed', random_state=123)
 

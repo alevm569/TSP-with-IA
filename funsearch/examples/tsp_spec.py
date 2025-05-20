@@ -1,11 +1,11 @@
 """Implement a new version of the find_best_route function to solve the TSP problem.
-AVOID brute force solutions, create new heuristics
+AVOID brute force solutions, create new heuristics and if you are going to use randomness, stabilize it by setting a seed to ensure reproducibility.
 PROVIDE just the python code for the new version of the function, i.e. find_best_route_vx"""
 import numpy as np
 import math
 from numpy import ndarray
 import funsearch
-
+import time
 from examples.util import read_distance_matrix
 
 
@@ -17,7 +17,7 @@ def calculate_route_distance(route: tuple[int, ...], distances: ndarray) -> floa
     distance = sum(distances[route[i], route[i + 1]] for i in range(len(route) - 1))
     # add the distance from the last city to the first city
     distance += distances[route[-1], route[0]]
-    return int(distance)
+    return float(distance)
 
 
 @funsearch.run
@@ -42,14 +42,20 @@ def find_best_route(_distances: np.ndarray) -> tuple[int, ...]:
     Parameters:
     _distances (np.ndarray): A square matrix of distances between cities, shape (n, n)
 
-    You may invent or combine heuristics from scratch, or use strategies such as:
+    You may use at least one strategy or combine two or more heuristics from the list below:
         - nearest neighbor
         - cheapest insertion
         - local search
         - 2-opt
         - hybrid or novel heuristics of your own design
+        - aco (ant colony optimization)
+        - genetic algorithms
+        - k-opt
+        - tabu search
 
     Routes must include all cities exactly once and return to the starting point.
+    Measure the execution time to evaluate how long the algorithm takes to compute a solution.
+
     """
     return tuple(range(len(_distances)))
 

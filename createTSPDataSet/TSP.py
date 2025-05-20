@@ -50,7 +50,7 @@ def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
         plot_route(cities, distances, min_h_solution.route, title="Nearest Neighbor + 2-opt Min",
                    show_name=show_name, marked_edges=best_edges)
     tsp_logger.info(
-        f"-Solved with NN and 2-opt. \t| distance: {round(min_h_solution.distance,6)}  \t| {report_time(ini_time, dt.datetime.now())}")
+        f"-Solved with NN and 2-opt. \t| distance: {round(min_h_solution.distance, 6)}  \t| {report_time(ini_time, dt.datetime.now())}")
 
     # Generate a sample using the linear programming model with the best edges and 2-opt algorithm
     ini_time = dt.datetime.now()
@@ -73,7 +73,7 @@ def generate_sample(n_cities: int, seed=123, show_name=False, show_plot=False):
             f"-Solved with ACO and 2-opt. \t| distance: {round(aco_tsp_solution.distance, 6)} \t| {report_time(ini_time, dt.datetime.now())}")
 
     if len(solutions) > 0:
-        save_sample(solutions, seed)
+        save_sample(solutions, seed, n_cities)
 
 
 def save_sample(solution_list: List[TSPSolution], seed: int, n_cities: int):
@@ -85,17 +85,16 @@ def save_sample(solution_list: List[TSPSolution], seed: int, n_cities: int):
             best_solution = solution
     best_algorithms = [best_solution.source.name]
     for solution in solution_list:
-        if round(solution.distance, 5) == round(best_solution.distance, 5) and solution.source.name !=  TSPSource.NONE.name:
+        if round(solution.distance, 5) == round(best_solution.distance,
+                                                5) and solution.source.name != TSPSource.NONE.name:
             best_algorithms.append(solution.source.name)
     best_solution.best_algorithm = list(set(best_algorithms))
 
     tsp_logger.info(f"Best solution for {seed}: {best_solution.best_algorithm} - {round(best_solution.distance, 4)}")
-    best_solution.save_as_pickle(data_path)
+    best_solution.save_as_pickle(data_path, n_cities)
 
 
 if __name__ == "__main__":
-    n_cities = 20
-    for i in range(0, 20):
-         generate_sample(n_cities, show_name=True, seed=i, show_plot=False)
-    #generate_sample(n_cities, show_name=True, seed=0, show_plot=False)
-
+    n_cities = 100
+    for i in range(1, n_cities+1):
+        generate_sample(n_cities, show_name=True, seed=i, show_plot=False)

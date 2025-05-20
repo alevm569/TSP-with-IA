@@ -2,7 +2,7 @@ import requests
 import json
 
 model_name_default = "codegemma:latest"
-api_endpoint_default = 'http://172.21.230.21:11434/api/generate'
+api_endpoint_default = 'http://172.21.230.10:11444/api/generate'
 
 
 class OLLAMA:
